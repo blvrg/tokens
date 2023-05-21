@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>btc tokens</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+       * {
+           font-family: 'VT323', monospace;
+           font-size: 1.5rem;
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
+       body {
+           width: 60%;
+           margin: 0 auto;
+           padding: 20px;
+       }
+       h1 {
+           float:left;
+           font-size:2rem;
+           text-transform: uppercase;
+       }
+       #filter {
+           float:right;
+           display:none;
+       }
+       img {
+           width: 50px;
+           image-rendering: pixelated;
+       }
+       table {
+           width: 100%;
+           border-collapse: collapse;
+       }
+       th, td {
+           padding: 10px;
+           text-align: left;
+           border-bottom: 1px solid #ccc;
+       }
+       th {
+           background-color: #f2f2f2;
+       }
+    </style>
+</head>
+<body>
+  <div id="nav">
+    <h1>btc tokens</h1>
+    <select id="filter" onchange="getIssuances(this.value)">
+        <option value="all">All</option>
+        <option value="deploy" selected>Deploy</option>
+        <option value="mint">Mint</option>
+    </select>
+  </div>
+
+    <table id="result">
+        <tr>
+            <th>#</th>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Supply</th>
+            <th>Max Mint</th>
+        </tr>
+    </table>
+    <script>
+        const API_URL = 'http://xchain.io/api/issuances/';
+        const MAX_RESULTS = 100;
+        let currentResults = 0;
+
+        function fetchIssuancesForBlock(blockNumber) {
+            return fetch(API_URL + blockNumber)
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('Error:', error);
+                    return 'Error occurred. See console for details.';
+                });
+        }
+
+        function getIssuances(filter = 'deploy') {
+            let startBlock = 789740;
+            let endBlock;
+
+            fetch('https://blockchain.info/q/getblockcount')
+                .then(response => response.text())
+                .then(block => {
+                    endBlock = parseInt(block);
+
+                    document.getElementById('result').innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th></tr>'; // Clear the results
+                    currentResults = 0; // Reset results count
+
+                    for(let i = endBlock; i >= startBlock && currentResults < MAX_RESULTS; i--) {
+                        fetchIssuancesForBlock(i).then(issuances => {
+                            issuances.data.forEach(issuance => {
+                                let expectedStart = 'token:' + filter;
+                                if((filter === 'all' && issuance.description.startsWith('token:')) ||
+                                    (filter !== 'all' && issuance.description.startsWith(expectedStart)) &&
+                                    currentResults < MAX_RESULTS) {
+                                    // Increment result counter
+                                    currentResults++;
+                                    // Extract token parameters
+                                    let params = issuance.description.split('|');
+                                    // Add the image and data to the results
+                                    let row = document.createElement('tr');
+                                    let numCell = document.createElement('td');
+                                    numCell.textContent = currentResults -1;
+                                    let imgCell = document.createElement('td');
+                                    let img = document.createElement('img');
+                                    img.src = "data:image/png;base64," + params[4];
+                                    imgCell.appendChild(img);
+                                    let nameCell = document.createElement('td');
+                                    nameCell.textContent = params[1];
+                                    let supplyCell = document.createElement('td');
+                                    supplyCell.textContent = params[2];
+                                    let maxMintCell = document.createElement('td');
+                                    maxMintCell.textContent = params[3];
+                                    row.appendChild(numCell);
+                                    row.appendChild(imgCell);
+                                    row.appendChild(nameCell);
+                                    row.appendChild(supplyCell);
+                                    row.appendChild(maxMintCell);
+                                    document.getElementById('result').appendChild(row);
+                                }
+                            });
+                        });
+                    }
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        window.onload = function() {
+            getIssuances(); // Fetch issuances when the page loads
+        };
+    </script>
+
+</body>
+</html>
