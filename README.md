@@ -19,3 +19,11 @@ mint tokens with quantity not more than max_mint
 ` token:mint|name|amount ` 
 
 note: `amount` in the token mint function should match `quantity` of token mint
+
+## beta
+
+### divisible tokens
+
+all tokens currently deployed are non-divisble
+
+experimentation is in order..
