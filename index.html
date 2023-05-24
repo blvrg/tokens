@@ -45,7 +45,7 @@
 </head>
 <body>
   <div id="nav">
-    <h1>btc tokens</h1>
+    <h1>btc tokens (arc-20)</h1>
     <select id="filter" onchange="getIssuances(this.value)">
         <option value="all">All</option>
         <option value="deploy" selected>Deploy</option>
@@ -63,12 +63,20 @@
         </tr>
     </table>
     <script>
-        const API_URL = 'https://xchain.io/api/issuances/';
         const MAX_RESULTS = 100;
-        let currentResults = 0;
+        const API_URL = 'https://xchain.io/api/';
 
         function fetchIssuancesForBlock(blockNumber) {
-            return fetch(API_URL + blockNumber)
+            return fetch(API_URL + 'issuances/' + blockNumber)
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('Error:', error);
+                    return 'Error occurred. See console for details.';
+                });
+        }
+
+        function fetchAsset(asset) {
+            return fetch(API_URL + 'asset/' + asset)
                 .then(response => response.json())
                 .catch(error => {
                     console.error('Error:', error);
@@ -77,7 +85,7 @@
         }
 
         function getIssuances(filter = 'deploy') {
-            let startBlock = 789740;
+            let startBlock = 791121;
             let endBlock;
 
             fetch('https://blockchain.info/q/getblockcount')
@@ -99,13 +107,13 @@
                                     currentResults++;
                                     // Extract token parameters
                                     let params = issuance.description.split('|');
-                                    // Add the image and data to the results
+
+                                    // Create table row and fill out default fields
                                     let row = document.createElement('tr');
                                     let numCell = document.createElement('td');
-                                    numCell.textContent = currentResults -1;
+                                    numCell.textContent = currentResults;
                                     let imgCell = document.createElement('td');
                                     let img = document.createElement('img');
-                                    img.src = "data:image/png;base64," + params[4];
                                     imgCell.appendChild(img);
                                     let nameCell = document.createElement('td');
                                     nameCell.textContent = params[1];
@@ -113,12 +121,32 @@
                                     supplyCell.textContent = params[2];
                                     let maxMintCell = document.createElement('td');
                                     maxMintCell.textContent = params[3];
-                                    row.appendChild(numCell);
-                                    row.appendChild(imgCell);
-                                    row.appendChild(nameCell);
-                                    row.appendChild(supplyCell);
-                                    row.appendChild(maxMintCell);
-                                    document.getElementById('result').appendChild(row);
+
+                                    // Check if we have an asset name or a base64 string
+                                    if(params[4].startsWith('A')) {
+                                        // Fetch asset information and extract base64 image from description
+                                        fetchAsset(params[4]).then(asset => {
+                                            let imageString = asset.description;
+                                            if (imageString.toLowerCase().startsWith('stamp:')) {
+                                                imageString = imageString.substring(6);
+                                            }
+                                            img.src = "data:image/png;base64," + imageString;
+                                            row.appendChild(numCell);
+                                            row.appendChild(imgCell);
+                                            row.appendChild(nameCell);
+                                            row.appendChild(supplyCell);
+                                            row.appendChild(maxMintCell);
+                                            document.getElementById('result').appendChild(row);
+                                        });
+                                    } else {
+                                        img.src = "data:image/png;base64," + params[4];
+                                        row.appendChild(numCell);
+                                        row.appendChild(imgCell);
+                                        row.appendChild(nameCell);
+                                        row.appendChild(supplyCell);
+                                        row.appendChild(maxMintCell);
+                                        document.getElementById('result').appendChild(row);
+                                    }
                                 }
                             });
                         });
@@ -130,6 +158,8 @@
         window.onload = function() {
             getIssuances(); // Fetch issuances when the page loads
         };
+
+
     </script>
 
 </body>
