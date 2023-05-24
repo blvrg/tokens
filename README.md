@@ -1,4 +1,4 @@
-# btc tokens
+# btc tokens (xrc-20)
 
 ## deploy
 
