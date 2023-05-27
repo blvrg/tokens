@@ -36,7 +36,7 @@
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
-            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+            const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
             // If filterType is not 'all', filter the data
             const filteredData = filterType !== 'all' ? data.filter(issuance => issuance.type === filterType) : data;
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
