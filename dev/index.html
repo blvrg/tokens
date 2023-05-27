@@ -56,7 +56,7 @@
         <div class="modal-content">
             <span class="close-btn" onclick="hideTokenPageModal()">&times;</span>
             <h2>Token Details</h2>
-            <div id="tokenDetails"></div>
+            <table id="tokenDetailsTable"></table>
         </div>
     </div>
     <script>
@@ -114,18 +114,18 @@
 
         function showTokenPage(asset) {
             const modal = document.getElementById('tokenPageModal');
-            const tokenDetails = document.getElementById('tokenDetails');
+            const tokenDetailsTable = document.getElementById('tokenDetailsTable');
             const assetRow = document.getElementById(asset);
 
             // Retrieve deploy and mint details from the row
             const deploy = assetRow.cells[0].textContent;
             const mintDetails = retrieveMintDetails(assetRow);
 
-            // Generate the HTML content for the token details
+            // Generate the HTML content for the token details table
             const html = generateTokenDetailsHTML(deploy, mintDetails);
 
             // Update the modal content with the generated HTML
-            tokenDetails.innerHTML = html;
+            tokenDetailsTable.innerHTML = html;
             modal.style.display = 'block';
         }
 
@@ -136,7 +136,7 @@
 
         function retrieveMintDetails(row) {
             const mintDetails = [];
-            for (let i = 1; i < row.cells.length; i++) {
+            for (let i = 1; i < row.cells.length - 1; i++) {
                 const mint = row.cells[i].textContent.trim();
                 if (mint !== '') {
                     mintDetails.push(mint);
@@ -146,9 +146,9 @@
         }
 
         function generateTokenDetailsHTML(deploy, mintDetails) {
-            let html = `<p>Deploy: ${deploy}</p>`;
+            let html = `<tr><th>Deploy</th></tr><tr><td>${deploy}</td></tr>`;
             mintDetails.forEach((mint, index) => {
-                html += `<p>Mint #${index + 1}: ${mint}</p>`;
+                html += `<tr><th>Mint #${index + 1}</th></tr><tr><td>${mint}</td></tr>`;
             });
             return html;
         }
