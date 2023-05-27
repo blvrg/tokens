@@ -20,19 +20,16 @@
         async function loadIssuances() {
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th><th>Type</th></tr>';
-
             let deployData = {};
-
             data.forEach((issuance, index) => {
                 const type = issuance.maxMint ? 'deploy' : 'mint';
                 if(type === 'deploy') {
                     deployData[issuance.name] = issuance.image;
                 }
                 let row = document.createElement('tr');
-
                 ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
                 row.cells[0].textContent = index + 1;
-                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.name}">${issuance.name}</a>`;
+                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${issuance.name}</a>`;
                 row.cells[3].textContent = issuance.supply;
                 let imageSrc = type === 'deploy' ? issuance.image : deployData[issuance.name];
                 console.log(imageSrc);  // Log the base64 string to console
@@ -43,10 +40,8 @@
 
                 result.appendChild(row);
             });
-
             loader.style.display = 'none';
         }
-
         window.onload = loadIssuances;  // Load issuances when the page loads
     </script>
 </body>
