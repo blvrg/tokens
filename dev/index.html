@@ -64,10 +64,6 @@
         const API_URL = 'https://xchain.io/api/';
         const dispenserCache = {};
 
-        function createTableCell(elementType = 'td') {
-            return document.createElement(elementType);
-        }
-
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
@@ -89,7 +85,7 @@
                 const row = document.createElement('tr');
                 Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
                 row.cells[0].textContent = index;
-                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}')"/>`;
+                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
                 row.cells[3].textContent = issuance.type;
                 row.cells[4].textContent = issuance.supply;
@@ -108,24 +104,26 @@
                 row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
                 row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
                 result.appendChild(row);
-            };
+            }
             loader.style.display = 'none';
         }
 
-        function showTokenPage(asset) {
+        function showTokenPage(asset, tokenName) {
             const modal = document.getElementById('tokenPageModal');
             const tokenDetailsTable = document.getElementById('tokenDetailsTable');
             const assetRow = document.getElementById(asset);
 
-            // Retrieve deploy and mint details from the row
-            const deploy = assetRow.cells[0].textContent;
-            const mintDetails = retrieveMintDetails(assetRow);
+            const filteredData = Array.from(assetRow.parentElement.children)
+                .filter(row => row.cells[2].textContent === tokenName); // Filter rows with the same token name
 
-            // Generate the HTML content for the token details table
-            const html = generateTokenDetailsHTML(deploy, mintDetails);
+            tokenDetailsTable.innerHTML = ''; // Clear previous contents
 
-            // Update the modal content with the generated HTML
-            tokenDetailsTable.innerHTML = html;
+            for (let index = 0; index < filteredData.length; index++) {
+                const row = filteredData[index].cloneNode(true); // Clone the row
+                row.cells[0].textContent = index; // Update the index
+                tokenDetailsTable.appendChild(row); // Add the row to the token details table
+            }
+
             modal.style.display = 'block';
         }
 
@@ -134,23 +132,8 @@
             modal.style.display = 'none';
         }
 
-        function retrieveMintDetails(row) {
-            const mintDetails = [];
-            for (let i = 1; i < row.cells.length - 1; i++) {
-                const mint = row.cells[i].textContent.trim();
-                if (mint !== '') {
-                    mintDetails.push(mint);
-                }
-            }
-            return mintDetails;
-        }
-
-        function generateTokenDetailsHTML(deploy, mintDetails) {
-            let html = `<tr><th>Deploy</th></tr><tr><td>${deploy}</td></tr>`;
-            mintDetails.forEach((mint, index) => {
-                html += `<tr><th>Mint #${index + 1}</th></tr><tr><td>${mint}</td></tr>`;
-            });
-            return html;
+        function createTableCell(elementType = 'td') {
+            return document.createElement(elementType);
         }
 
         // Add event listener for the filter select
