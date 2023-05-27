@@ -9,13 +9,8 @@
         body {width:60%; margin:0 auto; font-size: 1.5rem;}
         table {width:100%;}
         img {width:75px; height:75px; image-rendering:pixelated;}
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        h1 {margin: 0;}
+        .header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem}
+        td {text-align:center}
     </style>
 </head>
 <body>
@@ -54,7 +49,7 @@
                 const imageSrc = issuance.image || deployData[name];
                 let row = document.createElement('tr');
                 ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
-                row.cells[0].textContent = index + 1;
+                row.cells[0].textContent = index;
                 row.cells[1].innerHTML = `<img src="${imageSrc}" />`;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
                 row.cells[3].textContent = issuance.type;
@@ -67,7 +62,6 @@
                     dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
                     let giveRemaining = dispenserData.data[0].give_remaining; // Get the give_remaining amount from the dispenser data
                     let satoshiPrice = dispenserData.data[0].satoshi_price; // Get the satoshi_price from the dispenser data
-
                     dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
                 }
                 row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
