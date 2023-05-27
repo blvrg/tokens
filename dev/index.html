@@ -16,17 +16,13 @@
     <div id="loader">Loading</div>
     <script>
         const SITE_URL = 'https://xchain.io/';
-        const result = document.getElementById('result');
-        const loader = document.getElementById('loader');
-
         async function loadIssuances() {
-            const data = await (await fetch('data.json')).json(); 
-            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
+            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th><th>Type</th></tr>';
 
             let deployData = {};
 
-            for(let index = 0; index < data.length; index++) {
-                const issuance = data[index];
+            data.forEach((issuance, index) => {
                 const type = issuance.maxMint ? 'deploy' : 'mint';
                 if(type === 'deploy') {
                     deployData[issuance.name] = issuance.image;
@@ -35,28 +31,22 @@
 
                 ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
                 row.cells[0].textContent = index + 1;
-                let imageSrc = type === 'deploy' ? issuance.image : deployData[issuance.name];
                 row.cells[1].innerHTML = imageSrc ? `<img src="${imageSrc}" />` : '';
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.name}">${issuance.name}</a>`;
                 row.cells[3].textContent = type;
                 row.cells[4].textContent = issuance.supply;
+                let imageSrc = type === 'deploy' ? issuance.image : deployData[issuance.name];
+                console.log(imageSrc);  // Log the base64 string to console
                 row.cells[5].textContent = issuance.maxMint;
-
-                if(issuance.dispenser) {
-                    const dispenserData = await (await fetch(`${issuance.dispenser}`)).json();
-                    const available = dispenserData ? dispenserData.available : 'N/A'; 
-                    row.cells[6].innerHTML = `<a href="${issuance.dispenser}">${available}</a>`;
-                } else {
-                    row.cells[6].innerHTML = '';
-                }
+                row.cells[6].innerHTML = issuance.dispenser ? `<a href="${issuance.dispenser}">dispenser</a>` : '';
 
                 result.appendChild(row);
-            };
+            });
 
             loader.style.display = 'none';
         }
 
-        window.onload = loadIssuances;
+        window.onload = loadIssuances;  // Load issuances when the page loads
     </script>
 </body>
 </html>
