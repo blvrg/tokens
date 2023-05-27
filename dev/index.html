@@ -3,7 +3,7 @@
 <head>
     <title>btc tokens (xrc-20)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔨</text></svg>">
-    <style>        
+    <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
         * {font-family: 'VT323', monospace;}
         body {width:60%; margin:0 auto; font-size: 1.5rem;}
@@ -106,6 +106,7 @@
                     dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
                 }
                 row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
+                row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
                 result.appendChild(row);
             };
             loader.style.display = 'none';
@@ -114,16 +115,18 @@
         function showTokenPage(asset) {
             const modal = document.getElementById('tokenPageModal');
             const tokenDetails = document.getElementById('tokenDetails');
+            const assetRow = document.getElementById(asset);
 
-            // Load the minting details for the asset and update the modal content
-            loadMintingDetails(asset)
-                .then(details => {
-                    tokenDetails.innerHTML = details;
-                    modal.style.display = 'block';
-                })
-                .catch(error => {
-                    console.error(error);
-                });
+            // Retrieve deploy and mint details from the row
+            const deploy = assetRow.cells[0].textContent;
+            const mintDetails = retrieveMintDetails(assetRow);
+
+            // Generate the HTML content for the token details
+            const html = generateTokenDetailsHTML(deploy, mintDetails);
+
+            // Update the modal content with the generated HTML
+            tokenDetails.innerHTML = html;
+            modal.style.display = 'block';
         }
 
         function hideTokenPageModal() {
@@ -131,16 +134,20 @@
             modal.style.display = 'none';
         }
 
-        async function loadMintingDetails(asset) {
-            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
-            const mintingDetails = data.filter(issuance => issuance.asset === asset && issuance.type === 'mint');
-            const detailsHTML = generateMintingDetailsHTML(mintingDetails);
-            return detailsHTML;
+        function retrieveMintDetails(row) {
+            const mintDetails = [];
+            for (let i = 1; i < row.cells.length; i++) {
+                const mint = row.cells[i].textContent.trim();
+                if (mint !== '') {
+                    mintDetails.push(mint);
+                }
+            }
+            return mintDetails;
         }
 
-        function generateMintingDetailsHTML(mintingDetails) {
-            let html = '';
-            mintingDetails.forEach((mint, index) => {
+        function generateTokenDetailsHTML(deploy, mintDetails) {
+            let html = `<p>Deploy: ${deploy}</p>`;
+            mintDetails.forEach((mint, index) => {
                 html += `<p>Mint #${index + 1}: ${mint}</p>`;
             });
             return html;
