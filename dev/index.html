@@ -20,38 +20,20 @@
         async function loadIssuances() {
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th><th>Type</th></tr>';
-
-            let deployData = {};
-
             data.forEach((issuance, index) => {
-                const type = issuance.description.startsWith('token:deploy') ? 'deploy' : 'mint';
-                const details = issuance.description.split('|');
-                const name = details[1];
-                const supply = details[2];
-                const maxMint = type === 'deploy' ? details[3] : '';
-                const imageSrc = type === 'deploy' ? details[4] : deployData[name];
-
-                if(type === 'deploy') {
-                    deployData[name] = imageSrc;
-                }
-
                 let row = document.createElement('tr');
-
                 ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
                 row.cells[0].textContent = index + 1;
-                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
-                row.cells[3].textContent = supply;
-                row.cells[1].innerHTML = imageSrc ? `<img src="data:image/png;base64,${imageSrc}" />` : '';
-                row.cells[4].textContent = maxMint;
-                row.cells[5].innerHTML = issuance.dispenser ? `<a href="${issuance.dispenser}">dispenser</a>` : '';
-                row.cells[6].textContent = type;
-
+                row.cells[1].innerHTML = `<img src="${issuance.image}" />`;
+                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${issuance.name}</a>`;
+                row.cells[3].textContent = issuance.supply;
+                row.cells[4].textContent = issuance.maxMint;
+                row.cells[5].innerHTML = issuance.dispenserLink ? `<a href="${issuance.dispenserLink}">dispenser</a>` : '';
+                row.cells[6].textContent = issuance.type;
                 result.appendChild(row);
             });
-
             loader.style.display = 'none';
         }
-
         window.onload = loadIssuances;  // Load issuances when the page loads
     </script>
 </body>
