@@ -3,7 +3,8 @@
 <head>
     <title>btc tokens (xrc-20)</title>
     <style>
-        * {text-align:center; border:1px solid black}
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        * {font-family: 'VT323', monospace; text-align:center}
         body {width:60%; margin:0 auto}
         table {width:100%}
         img {width:75px; height:75px; image-rendering:pixelated}
@@ -16,8 +17,8 @@
     <script>
         const SITE_URL = 'https://xchain.io/';
         async function loadIssuances() {
-            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
-            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th><th>Type</th></tr>';
+            const data = await (await fetch('data.json')).json(); 
+            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
 
             let deployData = {};
 
@@ -30,14 +31,20 @@
 
                 ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
                 row.cells[0].textContent = index + 1;
-                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.name}">${issuance.name}</a>`;
-                row.cells[3].textContent = issuance.supply;
                 let imageSrc = type === 'deploy' ? issuance.image : deployData[issuance.name];
-                console.log(imageSrc);  // Log the base64 string to console
                 row.cells[1].innerHTML = imageSrc ? `<img src="${imageSrc}" />` : '';
-                row.cells[4].textContent = issuance.maxMint;
-                row.cells[5].innerHTML = issuance.dispenser ? `<a href="${issuance.dispenser}">dispenser</a>` : '';
-                row.cells[6].textContent = type;
+                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.name}">${issuance.name}</a>`;
+                row.cells[3].textContent = type;
+                row.cells[4].textContent = issuance.supply;
+                row.cells[5].textContent = issuance.maxMint;
+
+                if(issuance.dispenser) {
+                    const dispenserData = await (await fetch(`${issuance.dispenser}`)).json();
+                    const available = dispenserData ? dispenserData.available : 'N/A'; // assuming 'available' is a field in the dispenser API response
+                    row.cells[6].innerHTML = `<a href="${issuance.dispenser}">${available}</a>`;
+                } else {
+                    row.cells[6].innerHTML = '';
+                }
 
                 result.appendChild(row);
             });
@@ -45,7 +52,7 @@
             loader.style.display = 'none';
         }
 
-        window.onload = loadIssuances;  // Load issuances when the page loads
+        window.onload = loadIssuances;
     </script>
 </body>
 </html>
