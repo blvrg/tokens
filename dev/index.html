@@ -16,13 +16,17 @@
     <div id="loader">Loading</div>
     <script>
         const SITE_URL = 'https://xchain.io/';
+        const result = document.getElementById('result');
+        const loader = document.getElementById('loader');
+
         async function loadIssuances() {
             const data = await (await fetch('data.json')).json(); 
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
 
             let deployData = {};
 
-            data.forEach((issuance, index) => {
+            for(let index = 0; index < data.length; index++) {
+                const issuance = data[index];
                 const type = issuance.maxMint ? 'deploy' : 'mint';
                 if(type === 'deploy') {
                     deployData[issuance.name] = issuance.image;
@@ -40,14 +44,14 @@
 
                 if(issuance.dispenser) {
                     const dispenserData = await (await fetch(`${issuance.dispenser}`)).json();
-                    const available = dispenserData ? dispenserData.available : 'N/A'; // assuming 'available' is a field in the dispenser API response
+                    const available = dispenserData ? dispenserData.available : 'N/A'; 
                     row.cells[6].innerHTML = `<a href="${issuance.dispenser}">${available}</a>`;
                 } else {
                     row.cells[6].innerHTML = '';
                 }
 
                 result.appendChild(row);
-            });
+            };
 
             loader.style.display = 'none';
         }
