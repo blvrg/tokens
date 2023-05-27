@@ -17,6 +17,7 @@
     <div id="loader">Loading</div>
     <script>
         const SITE_URL = 'https://xchain.io/';
+        const API_URL = 'https://xchain.io/api/';
         async function loadIssuances() {
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
