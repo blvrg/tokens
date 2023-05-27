@@ -1,25 +1,33 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>btc tokens (xrc-20)</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👀</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔨</text></svg>">
     <style>        
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        * {font-family: 'VT323', monospace; text-align:center}
-        body {width:60%; margin:0 auto; font-size: 1.5rem}
-        table {width:100%}
-        img {width:75px; height:75px; image-rendering:pixelated}
+        * {font-family: 'VT323', monospace;}
+        body {width:60%; margin:0 auto; font-size: 1.5rem;}
+        table {width:100%;}
+        img {width:75px; height:75px; image-rendering:pixelated;}
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        h1 {margin: 0;}
     </style>
 </head>
 <body>
-    <h1>btc tokens (xrc-20)</h1>
+    <div class="header">
+        <h1>btc tokens (xrc-20)</h1>
+        <select id="filterSelect">
+            <option value="all">All</option>
+            <option value="deploy">Deploy</option>
+            <option value="mint">Mint</option>
+        </select>
+    </div>
     <div id="loader"></div>
-    <select id="filterSelect">
-        <option value="all">All</option>
-        <option value="deploy">Deploy</option>
-        <option value="mint">Mint</option>
-    </select>
     <table id="result"></table>
     <script>
         const SITE_URL = 'https://xchain.io/';
@@ -32,20 +40,24 @@
             const filteredData = filterType !== 'all' ? data.filter(issuance => issuance.type === filterType) : data;
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             let deployData = {};
-            for (let index = 0; index < filteredData.length; index++) {
-                const issuance = filteredData[index];
+            for (let index = 0; index < data.length; index++) {
+                const issuance = data[index];
                 const type = issuance.type;
                 const name = issuance.description.split('|')[1];
-                const imageSrc = issuance.image || deployData[name];
                 if(type === 'deploy') {
-                    deployData[name] = imageSrc;
+                    deployData[name] = issuance.image;
                 }
+            }
+            for (let index = 0; index < filteredData.length; index++) {
+                const issuance = filteredData[index];
+                const name = issuance.description.split('|')[1];
+                const imageSrc = issuance.image || deployData[name];
                 let row = document.createElement('tr');
                 ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
                 row.cells[0].textContent = index + 1;
                 row.cells[1].innerHTML = `<img src="${imageSrc}" />`;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
-                row.cells[3].textContent = type;
+                row.cells[3].textContent = issuance.type;
                 row.cells[4].textContent = issuance.supply;
                 row.cells[5].textContent = issuance.maxMint || '';
                 const dispenserData = await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
