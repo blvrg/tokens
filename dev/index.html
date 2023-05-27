@@ -52,13 +52,14 @@
     </div>
     <div id="loader"></div>
     <table id="result"></table>
-    <div id="tokenPageModal">
+    <div id="tokenPageModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="hideTokenPageModal()">&times;</span>
             <h2>Token Details</h2>
-            <table id="tokenDetailsTable"></table>
+            <div id="tokenDetails"></div>
         </div>
     </div>
+
     <script>
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
@@ -110,20 +111,25 @@
 
         function showTokenPage(asset, tokenName) {
             const modal = document.getElementById('tokenPageModal');
-            const tokenDetailsTable = document.getElementById('tokenDetailsTable');
+            const tokenDetails = document.getElementById('tokenDetails');
             const assetRow = document.getElementById(asset);
 
             const filteredData = Array.from(assetRow.parentElement.children)
                 .filter(row => row.cells[2].textContent === tokenName); // Filter rows with the same token name
 
-            tokenDetailsTable.innerHTML = ''; // Clear previous contents
-
+            // Generate the HTML content for the token details
+            let html = '';
             for (let index = 0; index < filteredData.length; index++) {
-                const row = filteredData[index].cloneNode(true); // Clone the row
-                row.cells[0].textContent = index; // Update the index
-                tokenDetailsTable.appendChild(row); // Add the row to the token details table
+                const row = filteredData[index];
+                const deploy = row.cells[0].textContent;
+                const mint = row.cells[1].textContent;
+
+                html += `<p>Deploy: ${deploy}</p>`;
+                html += `<p>Mint #${index + 1}: ${mint}</p>`;
             }
 
+            // Update the modal content with the generated HTML
+            tokenDetails.innerHTML = html;
             modal.style.display = 'block';
         }
 
