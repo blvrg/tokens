@@ -27,6 +27,7 @@
     <script>
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
+        const dispenserCache = {};
 
         function createTableCell(elementType = 'td') {
             return document.createElement(elementType);
@@ -59,7 +60,9 @@
                 row.cells[4].textContent = issuance.supply;
                 row.cells[5].textContent = issuance.maxMint || '';
 
-                const dispenserData = await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
+                const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
+                dispenserCache[issuance.asset] = dispenserData;
+
                 let dispenserLink = '';
                 let dispenserText = '';
                 if (dispenserData?.data?.length > 0) {
