@@ -8,9 +8,37 @@
         * {font-family: 'VT323', monospace;}
         body {width:60%; margin:0 auto; font-size: 1.5rem;}
         table {width:100%;}
-        img {width:75px; height:75px; image-rendering:pixelated;}
+        img {width:75px; height:75px; image-rendering:pixelated; cursor: pointer;}
         .header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem}
         td {text-align:center}
+        /* Modal styles */
+        #tokenPageModal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            width: 60%;
+            max-width: 600px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -24,6 +52,13 @@
     </div>
     <div id="loader"></div>
     <table id="result"></table>
+    <div id="tokenPageModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="hideTokenPageModal()">&times;</span>
+            <h2>Token Details</h2>
+            <div id="tokenDetails"></div>
+        </div>
+    </div>
     <script>
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
@@ -54,7 +89,7 @@
                 const row = document.createElement('tr');
                 Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
                 row.cells[0].textContent = index;
-                row.cells[1].innerHTML = `<img src="${imageSrc}" />`;
+                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}')"/>`;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
                 row.cells[3].textContent = issuance.type;
                 row.cells[4].textContent = issuance.supply;
@@ -74,6 +109,41 @@
                 result.appendChild(row);
             };
             loader.style.display = 'none';
+        }
+
+        function showTokenPage(asset) {
+            const modal = document.getElementById('tokenPageModal');
+            const tokenDetails = document.getElementById('tokenDetails');
+
+            // Load the minting details for the asset and update the modal content
+            loadMintingDetails(asset)
+                .then(details => {
+                    tokenDetails.innerHTML = details;
+                    modal.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        function hideTokenPageModal() {
+            const modal = document.getElementById('tokenPageModal');
+            modal.style.display = 'none';
+        }
+
+        async function loadMintingDetails(asset) {
+            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+            const mintingDetails = data.filter(issuance => issuance.asset === asset && issuance.type === 'mint');
+            const detailsHTML = generateMintingDetailsHTML(mintingDetails);
+            return detailsHTML;
+        }
+
+        function generateMintingDetailsHTML(mintingDetails) {
+            let html = '';
+            mintingDetails.forEach((mint, index) => {
+                html += `<p>Mint #${index + 1}: ${mint}</p>`;
+            });
+            return html;
         }
 
         // Add event listener for the filter select
