@@ -1,41 +1,46 @@
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>btc tokens (xrc-20)</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍉</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👀</text></svg>">
     <style>        
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
         * {font-family: 'VT323', monospace; text-align:center}
-        body {width:60%; margin:0 auto}
+        body {width:60%; margin:0 auto; font-size: 1.5rem}
         table {width:100%}
         img {width:75px; height:75px; image-rendering:pixelated}
     </style>
 </head>
 <body>
     <h1>btc tokens (xrc-20)</h1>
+    <select id="filterSelect">
+        <option value="all">All</option>
+        <option value="deploy">Deploy</option>
+        <option value="mint">Mint</option>
+    </select>
     <table id="result"></table>
     <div id="loader">Loading</div>
     <script>
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
         async function loadIssuances() {
-            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+            const filterSelect = document.getElementById('filterSelect');
+            const filterType = filterSelect.value; // Get the selected filter type
+            const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
+            // If filterType is not 'all', filter the data
+            const filteredData = filterType !== 'all' ? data.filter(issuance => issuance.type === filterType) : data;
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
-
             let deployData = {};
-
-            for (let index = 0; index < data.length; index++) {
-                const issuance = data[index];
+            for (let index = 0; index < filteredData.length; index++) {
+                const issuance = filteredData[index];
                 const type = issuance.type;
                 const name = issuance.description.split('|')[1];
                 const imageSrc = issuance.image || deployData[name];
-
                 if(type === 'deploy') {
                     deployData[name] = imageSrc;
                 }
-
                 let row = document.createElement('tr');
-
                 ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
                 row.cells[0].textContent = index + 1;
                 row.cells[1].innerHTML = `<img src="${imageSrc}" />`;
@@ -46,7 +51,6 @@
                 const dispenserData = await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
                 let dispenserLink = '';
                 let dispenserText = '';
-
                 if (dispenserData && dispenserData.data && dispenserData.data.length > 0) {
                     dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
                     let giveRemaining = dispenserData.data[0].give_remaining; // Get the give_remaining amount from the dispenser data
@@ -54,15 +58,13 @@
 
                     dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
                 }
-
                 row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
-
                 result.appendChild(row);
             };
-
             loader.style.display = 'none';
         }
-
+        // Add event listener for the filter select
+        document.getElementById('filterSelect').addEventListener('change', loadIssuances);
         window.onload = loadIssuances;  // Load issuances when the page loads
     </script>
 </body>
