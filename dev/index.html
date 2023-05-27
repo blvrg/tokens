@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>btc tokens (xrc-20)</title>
+</head>
+<body>
+    <table id="result"></table>
+    <div id="loader">Loading</div>
+
+    <script>
+        const SITE_URL = 'https://xchain.io/', result = document.getElementById('result'), loader = document.getElementById('loader');
+        let currentResults = 0;
+
+        async function loadIssuances() {
+            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
+
+            data.forEach((issuance) => {
+                currentResults++;
+                let row = document.createElement('tr');
+
+                ['td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
+                row.cells[0].textContent = issuance.num;
+                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.name}">${issuance.name}</a>`;
+                row.cells[3].textContent = issuance.supply;
+                row.cells[1].innerHTML = `<img src="${issuance.image}" />`;
+                row.cells[4].textContent = issuance.maxMint;
+                row.cells[5].innerHTML = issuance.dispenser ? `<a href="${issuance.dispenser}">dispenser</a>` : '';
+
+                result.appendChild(row);
+            });
+
+            loader.style.display = 'none';
+        }
+
+        window.onload = loadIssuances;  // Load issuances when the page loads
+    </script>
+</body>
+</html>
