@@ -14,20 +14,20 @@
 </head>
 <body>
     <h1>btc tokens (xrc-20)</h1>
+    <div id="loader"></div>
     <select id="filterSelect">
         <option value="all">All</option>
         <option value="deploy">Deploy</option>
         <option value="mint">Mint</option>
     </select>
     <table id="result"></table>
-    <div id="loader">Loading</div>
     <script>
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
-            const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
+            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
             // If filterType is not 'all', filter the data
             const filteredData = filterType !== 'all' ? data.filter(issuance => issuance.type === filterType) : data;
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
