@@ -27,6 +27,11 @@
     <script>
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
+
+        function createTableCell(elementType = 'td') {
+            return document.createElement(elementType);
+        }
+
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
@@ -34,34 +39,32 @@
             // If filterType is not 'all', filter the data
             const filteredData = filterType !== 'all' ? data.filter(issuance => issuance.type === filterType) : data;
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
-            let deployData = {};
-            for (let index = 0; index < data.length; index++) {
-                const issuance = data[index];
-                const type = issuance.type;
-                const name = issuance.description.split('|')[1];
-                if(type === 'deploy') {
-                    deployData[name] = issuance.image;
-                }
-            }
+            const deployData = data.filter(issuance => issuance.type === 'deploy')
+                .reduce((obj, issuance) => {
+                    const name = issuance.description.split('|')[1];
+                    obj[name] = issuance.image;
+                    return obj;
+                }, {});
+
             for (let index = 0; index < filteredData.length; index++) {
                 const issuance = filteredData[index];
                 const name = issuance.description.split('|')[1];
                 const imageSrc = issuance.image || deployData[name];
-                let row = document.createElement('tr');
-                ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
+                const row = document.createElement('tr');
+                Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
                 row.cells[0].textContent = index;
                 row.cells[1].innerHTML = `<img src="${imageSrc}" />`;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
                 row.cells[3].textContent = issuance.type;
                 row.cells[4].textContent = issuance.supply;
                 row.cells[5].textContent = issuance.maxMint || '';
+
                 const dispenserData = await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
                 let dispenserLink = '';
                 let dispenserText = '';
-                if (dispenserData && dispenserData.data && dispenserData.data.length > 0) {
+                if (dispenserData?.data?.length > 0) {
                     dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
-                    let giveRemaining = dispenserData.data[0].give_remaining; // Get the give_remaining amount from the dispenser data
-                    let satoshiPrice = dispenserData.data[0].satoshi_price; // Get the satoshi_price from the dispenser data
+                    const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
                     dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
                 }
                 row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
@@ -69,6 +72,7 @@
             };
             loader.style.display = 'none';
         }
+
         // Add event listener for the filter select
         document.getElementById('filterSelect').addEventListener('change', loadIssuances);
         window.onload = loadIssuances;  // Load issuances when the page loads
