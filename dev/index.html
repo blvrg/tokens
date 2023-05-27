@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>btc tokens (xrc-20)</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦄🦄</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦇</text></svg>">
     <style>        
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
         * {font-family: 'VT323', monospace; text-align:center}
@@ -40,7 +40,7 @@
                 row.cells[1].innerHTML = `<img src="${imageSrc}" />`;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
                 row.cells[3].textContent = type;
-                row.cells[4].textContent = issuance.quantity;
+                row.cells[4].textContent = issuance.supply;
                 row.cells[5].textContent = issuance.maxMint || '';
                 const dispenserLink = `https://xchain.io/api/dispensers/${issuance.asset}?open`;
                 const dispenserData = await (await fetch(dispenserLink)).json();
