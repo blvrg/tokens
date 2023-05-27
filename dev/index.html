@@ -14,8 +14,6 @@
     <table id="result"></table>
     <div id="loader">Loading</div>
     <script>
-        const SITE_URL = 'https://xchain.io/', result = document.getElementById('result'), loader = document.getElementById('loader');
-
         async function loadIssuances() {
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th><th>Type</th></tr>';
@@ -23,7 +21,8 @@
             let deployData = {};
 
             data.forEach((issuance, index) => {
-                if(issuance.type && issuance.type.toLowerCase() === 'deploy') {
+                const type = issuance.maxMint ? 'deploy' : 'mint';
+                if(type === 'deploy') {
                     deployData[issuance.name] = issuance.image;
                 }
                 let row = document.createElement('tr');
@@ -32,12 +31,12 @@
                 row.cells[0].textContent = index + 1;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.name}">${issuance.name}</a>`;
                 row.cells[3].textContent = issuance.supply;
-                let imageSrc = issuance.type && issuance.type.toLowerCase() === 'deploy' ? issuance.image : deployData[issuance.name];
+                let imageSrc = type === 'deploy' ? issuance.image : deployData[issuance.name];
                 console.log(imageSrc);  // Log the base64 string to console
                 row.cells[1].innerHTML = imageSrc ? `<img src="${imageSrc}" />` : '';
                 row.cells[4].textContent = issuance.maxMint;
                 row.cells[5].innerHTML = issuance.dispenser ? `<a href="${issuance.dispenser}">dispenser</a>` : '';
-                row.cells[6].textContent = issuance.type ? issuance.type : '';
+                row.cells[6].textContent = type;
 
                 result.appendChild(row);
             });
