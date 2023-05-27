@@ -6,30 +6,36 @@
         * {text-align:center; border:1px solid black}
         body {width:60%; margin:0 auto}
         table {width:100%}
-        img {width:75px; image-rendering:pixelated}
+        img {width:75px; height:75px; image-rendering:pixelated}
     </style>
 </head>
 <body>
+    <h1>btc tokens (xrc-20)</h1>
     <table id="result"></table>
     <div id="loader">Loading</div>
-
     <script>
         const SITE_URL = 'https://xchain.io/', result = document.getElementById('result'), loader = document.getElementById('loader');
 
         async function loadIssuances() {
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
-            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
+            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th><th>Type</th></tr>';
+
+            let deployData = {};
 
             data.forEach((issuance, index) => {
+                if(issuance.type.toLowerCase() === 'deploy') {
+                    deployData[issuance.name] = issuance.image;
+                }
                 let row = document.createElement('tr');
 
-                ['td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
+                ['td', 'td', 'td', 'td', 'td', 'td', 'td'].forEach(td => row.appendChild(document.createElement(td)));
                 row.cells[0].textContent = index + 1;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.name}">${issuance.name}</a>`;
                 row.cells[3].textContent = issuance.supply;
-                row.cells[1].innerHTML = `<img src="${issuance.image}" />`;
+                row.cells[1].innerHTML = `<img src="${issuance.type.toLowerCase() === 'deploy' ? issuance.image : deployData[issuance.name]}" />`;
                 row.cells[4].textContent = issuance.maxMint;
                 row.cells[5].innerHTML = issuance.dispenser ? `<a href="${issuance.dispenser}">dispenser</a>` : '';
+                row.cells[6].textContent = issuance.type;
 
                 result.appendChild(row);
             });
