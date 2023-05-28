@@ -8,6 +8,10 @@ deploy new token with quantity = 1
 
 ` token:deploy|name|supply|max_mint|stamp_name `
 
+names can be
+- alphanumberic
+- unicode `u+xxxx`
+
 images can be
 - a base64 encoded image string
 - the asset name of a stamp (eg. A7337447728884561000)
