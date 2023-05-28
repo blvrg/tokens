@@ -41,16 +41,29 @@
             // If filterType is not 'all', filter the data
             const filteredData = filterType !== 'all' ? data.filter(issuance => issuance.type === filterType) : data;
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
+
             const deployData = data.filter(issuance => issuance.type === 'deploy')
                 .reduce((obj, issuance) => {
-                    const name = issuance.description.split('|')[1];
+                    let nameRaw = issuance.description.split('|')[1];
+                    let name = nameRaw;
+                    // check if the name starts with 'U+' and the rest of it is a valid hexadecimal number
+                    if(nameRaw.startsWith('U+') && !isNaN(Number('0x' + nameRaw.slice(2)))) {
+                        name = String.fromCodePoint('0x' + nameRaw.slice(2));
+                    }
+
                     obj[name] = issuance.image;
                     return obj;
                 }, {});
 
             for (let index = 0; index < filteredData.length; index++) {
                 const issuance = filteredData[index];
-                const name = issuance.description.split('|')[1];
+                let nameRaw = issuance.description.split('|')[1];
+                let name = nameRaw;
+                // check if the name starts with 'U+' and the rest of it is a valid hexadecimal number
+                if(nameRaw.startsWith('U+') && !isNaN(Number('0x' + nameRaw.slice(2)))) {
+                    name = String.fromCodePoint('0x' + nameRaw.slice(2));
+                }
+
                 const imageSrc = issuance.image || deployData[name];
                 const row = document.createElement('tr');
                 Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
