@@ -112,7 +112,7 @@
                 const name = issuance.description.split('|')[1];
                 const imageSrc = issuance.image || deployData[name];
                 const row = document.createElement('tr');
-                Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
+                Array.from({ length: 10 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
                 row.cells[0].textContent = index;
                 row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
