@@ -62,6 +62,7 @@
 
             for (let i = startBlock; i <= endBlock; i++) {
                 const issuances = await (await fetch(`${API_URL}issuances/${i}`)).json();
+    
             // If filterType is not 'all', further filter the data
             filteredData = filterType !== 'all' 
                 ? filteredData.filter(issuance => issuance.type === filterType) 
@@ -104,6 +105,7 @@
                 result.appendChild(row);
             }
             loader.style.display = 'none';
+        }
         }
 
         function createTableCell(elementType = 'td') {
