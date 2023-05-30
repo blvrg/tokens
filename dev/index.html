@@ -64,13 +64,26 @@
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
         const dispenserCache = {};
+        
+        function createTableCell(elementType = 'td') {
+            return document.createElement(elementType);
+        }
 
+        // Function to get a query parameter by name
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+            const nameQueryParam = getQueryParam('name');
+
             // If filterType is not 'all', filter the data
-            const filteredData = filterType !== 'all' ? data.filter(issuance => issuance.type === filterType) : data;
+            const filteredData = filterType !== 'all' 
+                ? data.filter(issuance => issuance.type === filterType && issuance.description.includes(nameQueryParam)) 
+                : data;
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             const deployData = data.filter(issuance => issuance.type === 'deploy')
                 .reduce((obj, issuance) => {
