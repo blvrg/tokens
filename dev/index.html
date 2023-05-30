@@ -116,11 +116,12 @@
 
                 let dispenserLink = '';
                 let dispenserText = '';
-                if (dispenserData?.data?.length > 0) {
+                if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
                     dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
                     const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
                     dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
                 }
+
                 row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
                 row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
                 result.appendChild(row);
