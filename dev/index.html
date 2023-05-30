@@ -47,6 +47,10 @@
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+
+            // Get the highest block number in your JSON data
+            const lastBlock = data.reduce((highest, issuance) => Math.max(highest, issuance.block), 0);
+
             const nameQueryParam = getFirstQueryParam();
 
             // If nameQueryParam is not null, filter the data
@@ -59,48 +63,75 @@
                 ? filteredData.filter(issuance => issuance.type === filterType) 
                 : filteredData;
 
+            renderIssuances(filteredData);
+
+            // Start fetching new issuances from the API
+            fetchNewIssuances(lastBlock + 1);
+        }
+
+        function renderIssuances(data) {
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
-            const deployData = data.filter(issuance => issuance.type === 'deploy')
-                .reduce((obj, issuance) => {
-                    const name = issuance.description.split('|')[1];
-                    obj[name] = issuance.image;
-                    return obj;
-                }, {});
 
-            for (let index = 0; index < filteredData.length; index++) {
-                const issuance = filteredData[index];
-                const name = issuance.description.split('|')[1];
-                const imageSrc = issuance.image || deployData[name];
-                const row = document.createElement('tr');
-                Array.from({ length: 10 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
-                row.cells[0].textContent = index;
-                row.cells[1].innerHTML = `<img src="${imageSrc}"/>`;
-                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
-                row.cells[3].textContent = issuance.type;
-                row.cells[4].textContent = issuance.supply;
-                row.cells[5].textContent = issuance.maxMint || '';
-
-                const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
-                dispenserCache[issuance.asset] = dispenserData;
-
-                let dispenserLink = '';
-                let dispenserText = '';
-                if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
-                    dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
-                    const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
-                    dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
-                }
-
-                row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
-                row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
-                result.appendChild(row);
+            for (let index = 0; index < data.length; index++) {
+                const issuance = data[index];
+                row.cells[6].innerHTML = issuance.dispenser.link ? `<a href="${issuance.dispenser.link}">${issuance.dispenser.text}</a>` : '';
             }
+
             loader.style.display = 'none';
         }
+
+        const tokenImages = {};
+
+        async function fetchNewIssuances(startBlock) {
+            const endBlock = parseInt(await (await fetch('https://blockchain.info/q/getblockcount')).text());
+
+            for(let i = startBlock; i <= endBlock; i++) {
+                const issuances = await (await fetch(API_URL + 'issuances/' + i)).json();
+
+                issuances.data.forEach(async (issuance) => {
+                    if(['token:deploy', 'token:mint'].some(start => issuance.description.toLowerCase().startsWith(start))) {
+                        let params = issuance.description.split('|');
+                        const tokenType = issuance.description.toLowerCase().startsWith('token:deploy') ? 'deploy' : 'mint';  
+                        let imageData;
+
+                        if(tokenType === 'mint' && tokenImages[params[1]]) {
+                            imageData = tokenImages[params[1]];
+                        } else {
+                            imageData = await getImageData(params[4], params[1]);
+                        }
+
+                        let newIssuance = {};
+                        newIssuance['type'] = tokenType;
+                        newIssuance['image'] = imageData;
+                        newIssuance['name'] = params[1];
+                        newIssuance['supply'] = params[2];
+                        newIssuance['maxMint'] = issuance.description.toLowerCase().startsWith('token:deploy') ? params[3] : '';
+
+                        const dispenserData = await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
+                        let dispenserLink = '';
+                        let dispenserText = '';
+
+                        if (dispenserData && dispenserData.data && dispenserData.data.length > 0) {
+                            dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
+                            let giveRemaining = dispenserData.data[0].give_remaining;
+                            let satoshiPrice = dispenserData.data[0].satoshi_price;
+                            dispenserText = `${giveRemaining} @ ${satoshiPrice}`;
+                        }
+
+                        newIssuance['dispenser'] = dispenserLink ? { link: dispenserLink, text: dispenserText } : {};
+
+                        // Call renderIssuances with the new issuance to update the page
+                        renderIssuances([newIssuance]);
+                    }
+                });
+            }
+        }
+
 
         // Add event listener for the filter select
         document.getElementById('filterSelect').addEventListener('change', loadIssuances);
         window.onload = loadIssuances;  // Load issuances when the page loads
+
     </script>
 </body>
 </html>
