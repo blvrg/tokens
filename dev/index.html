@@ -70,20 +70,29 @@
         }
 
         // Function to get a query parameter by name
-        function getQueryParam(name) {
+        function getFirstQueryParam() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+            for(let param of urlParams.keys()) {
+                return param;
+            }
+            return null;
         }
+
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
-            const nameQueryParam = getQueryParam('name');
+            const nameQueryParam = getFirstQueryParam();
 
             // If nameQueryParam is not null, filter the data
             let filteredData = nameQueryParam 
-                ? data.filter(issuance => issuance.name.toLowerCase() === nameQueryParam.toLowerCase()) 
+                ? data.filter(issuance => issuance.name === nameQueryParam) 
                 : data;
+
+            // If filterType is not 'all', further filter the data
+            filteredData = filterType !== 'all' 
+                ? filteredData.filter(issuance => issuance.type === filterType) 
+                : filteredData;
 
             // If filterType is not 'all', further filter the data
             filteredData = filterType !== 'all' 
