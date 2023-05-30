@@ -80,10 +80,16 @@
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
             const nameQueryParam = getQueryParam('name');
 
-            // If filterType is not 'all', filter the data
-            const filteredData = filterType !== 'all' 
-                ? data.filter(issuance => issuance.type === filterType && issuance.description.includes(nameQueryParam)) 
+            // If nameQueryParam is not null, filter the data
+            let filteredData = nameQueryParam 
+                ? data.filter(issuance => issuance.description.split('|')[1] === nameQueryParam) 
                 : data;
+
+            // If filterType is not 'all', further filter the data
+            filteredData = filterType !== 'all' 
+                ? filteredData.filter(issuance => issuance.type === filterType) 
+                : filteredData;
+            
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             const deployData = data.filter(issuance => issuance.type === 'deploy')
                 .reduce((obj, issuance) => {
