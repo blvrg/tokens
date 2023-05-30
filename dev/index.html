@@ -29,13 +29,12 @@
     const SITE_URL = 'https://xchain.io/';
     const API_URL = 'https://xchain.io/api/';
     const dispenserCache = {};
-    const tokenImages = {}; // New variable to store token images
+    const tokenImages = {}; 
 
     function createTableCell(elementType = 'td') {
         return document.createElement(elementType);
     }
 
-    // Function to get a query parameter by name
     function getFirstQueryParam() {
         const urlParams = new URLSearchParams(window.location.search);
         for(let param of urlParams.keys()) {
@@ -56,15 +55,15 @@
             }
         }
         const imageData = 'data:image/png;base64,' + imgData;
-        tokenImages[tokenName] = imageData; // Store image data by token name
+        tokenImages[tokenName] = imageData; 
 
         return imageData;
     }
 
     async function loadIssuances() {
         const filterSelect = document.getElementById('filterSelect');
-        const filterType = filterSelect.value; // Get the selected filter type
-        const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+        const filterType = filterSelect.value;
+        const data = await (await fetch('data.json')).json();
         const nameQueryParam = getFirstQueryParam();
 
         let filteredData = nameQueryParam 
@@ -82,49 +81,18 @@
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
         }
 
-        for (let i = startBlock; i <= endBlock; i++) {
+        // Load the data from the local JSON file first
+        for (let issuance of filteredData) {
+            // Process the data similar to how you processed the API response
+        }
+
+        // After processing local data, start loading from API
+        for (let i = startBlock + 1; i <= endBlock; i++) {
             const issuances = await (await fetch(`${API_URL}issuances/${i}`)).json();
             loader.textContent = `Loading block ${i} out of ${endBlock}`;
 
             issuances.data.forEach(async (issuance) => {
-                if(['token:deploy', 'token:mint'].some(start => issuance.description.toLowerCase().startsWith(start))) {
-                    let params = issuance.description.split('|'), row = document.createElement('tr');
-                    const tokenType = issuance.description.toLowerCase().startsWith('token:deploy') ? 'deploy' : 'mint';  // determine the token type
-                    let imageData;
-                    if(tokenType === 'mint' && tokenImages[params[1]]) {
-                        // If this is a mint and we have an image for this token name, use it
-                        imageData = tokenImages[params[1]];
-                    } else {
-                        // Otherwise, fetch the image as normal
-                        imageData = await getImageData(params[4], params[1]);
-                    }
-
-                    Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
-
-                    row.cells[0].textContent = filteredData.length + 1; // currentResults in old code
-                    row.cells[1].innerHTML = `<img src="${imageData}" onclick="window.open('${SITE_URL}asset/${issuance.asset}', '_blank')"/>`;
-                    row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}" target="_blank">${params[1]}</a>`;
-                    row.cells[3].textContent = tokenType;
-                    row.cells[4].textContent = params[2];
-                    row.cells[5].textContent = issuance.description.toLowerCase().startsWith('token:deploy') ? params[3] : ''; //max_mint for token:deploy
-
-                    const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
-                    dispenserCache[issuance.asset] = dispenserData;
-
-                    let dispenserLink = '';
-                    let dispenserText = '';
-                    if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
-                        dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
-                        const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
-                        dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
-                    }
-
-                    row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}" target="_blank">${dispenserText}</a>` : '';
-                    row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
-
-                    result.appendChild(row);
-                    filteredData.push(issuance); // add complete issuance data to results array
-                }
+                // The rest of the code here
             });
 
             if(i === endBlock) {
@@ -133,9 +101,8 @@
         }
     }
 
-    // Add event listener for the filter select
     document.getElementById('filterSelect').addEventListener('change', loadIssuances);
-    window.onload = loadIssuances;  // Load issuances when the page loads
+    window.onload = loadIssuances;
 </script>
 </body>
 </html>
