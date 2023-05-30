@@ -64,7 +64,7 @@
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
         const dispenserCache = {};
-        
+
         function createTableCell(elementType = 'td') {
             return document.createElement(elementType);
         }
@@ -73,7 +73,7 @@
         function getFirstQueryParam() {
             const urlParams = new URLSearchParams(window.location.search);
             for(let param of urlParams.keys()) {
-                return param;
+                return decodeURIComponent(param);
             }
             return null;
         }
@@ -86,7 +86,7 @@
 
             // If nameQueryParam is not null, filter the data
             let filteredData = nameQueryParam 
-                ? data.filter(issuance => issuance.name === nameQueryParam) 
+                ? data.filter(issuance => String.fromCodePoint('0x' + issuance.name.substring(2)) === nameQueryParam) 
                 : data;
 
             // If filterType is not 'all', further filter the data
@@ -94,11 +94,6 @@
                 ? filteredData.filter(issuance => issuance.type === filterType) 
                 : filteredData;
 
-            // If filterType is not 'all', further filter the data
-            filteredData = filterType !== 'all' 
-                ? filteredData.filter(issuance => issuance.type === filterType) 
-                : filteredData;
-            
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             const deployData = data.filter(issuance => issuance.type === 'deploy')
                 .reduce((obj, issuance) => {
@@ -109,13 +104,13 @@
 
             for (let index = 0; index < filteredData.length; index++) {
                 const issuance = filteredData[index];
-                const name = issuance.description.split('|')[1];
+                const name = String.fromCodePoint('0x' + issuance.name.substring(2));
                 const imageSrc = issuance.image || deployData[name];
                 const row = document.createElement('tr');
                 Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
                 row.cells[0].textContent = index;
-                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
-                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
+                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${encodeURIComponent(name)}')"/>`;
+                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${encodeURIComponent(issuance.asset)}">${name}</a>`;
                 row.cells[3].textContent = issuance.type;
                 row.cells[4].textContent = issuance.supply;
                 row.cells[5].textContent = issuance.maxMint || '';
@@ -144,7 +139,7 @@
             const assetRow = document.getElementById(asset);
 
             const filteredData = Array.from(assetRow.parentElement.children)
-                .filter(row => row.cells[2].textContent === tokenName); // Filter rows with the same token name
+                .filter(row => row.cells[2].textContent === decodeURIComponent(tokenName)); // Filter rows with the same token name
 
             // Generate the HTML content for the token details
             let html = '';
@@ -167,13 +162,10 @@
             modal.style.display = 'none';
         }
 
-        function createTableCell(elementType = 'td') {
-            return document.createElement(elementType);
-        }
-
         // Add event listener for the filter select
         document.getElementById('filterSelect').addEventListener('change', loadIssuances);
         window.onload = loadIssuances;  // Load issuances when the page loads
+
     </script>
 </body>
 </html>
