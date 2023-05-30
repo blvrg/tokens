@@ -82,7 +82,7 @@
 
             // If nameQueryParam is not null, filter the data
             let filteredData = nameQueryParam 
-                ? data.filter(issuance => issuance.description.split('|')[1] === nameQueryParam) 
+                ? data.filter(issuance => issuance.name.toLowerCase() === nameQueryParam.toLowerCase()) 
                 : data;
 
             // If filterType is not 'all', further filter the data
