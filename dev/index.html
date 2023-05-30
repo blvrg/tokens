@@ -29,7 +29,7 @@
     const SITE_URL = 'https://xchain.io/';
     const API_URL = 'https://xchain.io/api/';
     const dispenserCache = {};
-    const tokenImages = {}; 
+    const tokenImages = {};
 
     function createTableCell(elementType = 'td') {
         return document.createElement(elementType);
@@ -55,7 +55,7 @@
             }
         }
         const imageData = 'data:image/png;base64,' + imgData;
-        tokenImages[tokenName] = imageData; 
+        tokenImages[tokenName] = imageData;
 
         return imageData;
     }
@@ -82,22 +82,39 @@
         }
 
         // Load the data from the local JSON file first
-        for (let issuance of filteredData) {
-            // Process the data similar to how you processed the API response
+        for (let index = 0; index < filteredData.length; index++) {
+            const issuance = filteredData[index];
+            const name = issuance.description.split('|')[1];
+            const imageSrc = issuance.image || tokenImages[name];
+            const row = document.createElement('tr');
+            Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
+            row.cells[0].textContent = index;
+            row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
+            row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
+            row.cells[3].textContent = issuance.type;
+            row.cells[4].textContent = issuance.supply;
+            row.cells[5].textContent = issuance.maxMint || '';
+
+            const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
+            dispenserCache[issuance.asset] = dispenserData;
+
+            let dispenserLink = '';
+            let dispenserText = '';
+            if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
+                dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
+                const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
+                dispenserText = `${giveRemaining} @ ${satoshiPrice}`; 
+            }
+
+            row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
+            row.setAttribute('id', issuance.asset);
+            result.appendChild(row);
         }
 
-        // After processing local data, start loading from API
-        for (let i = startBlock + 1; i <= endBlock; i++) {
+        // Then load the data from the API
+        for (let i = startBlock; i <= endBlock; i++) {
             const issuances = await (await fetch(`${API_URL}issuances/${i}`)).json();
             loader.textContent = `Loading block ${i} out of ${endBlock}`;
-
-            issuances.data.forEach(async (issuance) => {
-                // The rest of the code here
-            });
-
-            if(i === endBlock) {
-                loader.style.display = 'none';
-            }
         }
     }
 
