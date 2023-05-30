@@ -2,16 +2,43 @@
 <html>
 <head>
     <title>btc tokens (xrc-20)</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👀</text></svg>">
-    <style>        
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔨</text></svg>">
+    <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
         * {font-family: 'VT323', monospace;}
         body {width:60%; margin:0 auto; font-size: 1.5rem;}
         table {width:100%;}
-        img {width:75px; height:75px; image-rendering:pixelated;}
+        img {width:75px; height:75px; image-rendering:pixelated; cursor: pointer;}
         .header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem}
         td {text-align:center}
-        #filterSelect {font-size: 1.25rem; margin: 2% 9% 0% 0%;}
+        /* Modal styles */
+        #tokenPageModal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            width: 60%;
+            max-width: 600px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -25,50 +52,60 @@
     </div>
     <div id="loader"></div>
     <table id="result"></table>
+    <div id="tokenPageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="hideTokenPageModal()">&times;</span>
+            <h2>Token Details</h2>
+            <div id="tokenDetails"></div>
+        </div>
+    </div>
+
     <script>
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
         const dispenserCache = {};
-
+        
         function createTableCell(elementType = 'td') {
             return document.createElement(elementType);
         }
 
+        // Function to get a query parameter by name
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
-            const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
-            // If filterType is not 'all', filter the data
-            const filteredData = filterType !== 'all' ? data.filter(issuance => issuance.type === filterType) : data;
-            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
+            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+            const nameQueryParam = getQueryParam('name');
 
+            // If nameQueryParam is not null, filter the data
+            let filteredData = nameQueryParam 
+                ? data.filter(issuance => issuance.name.toLowerCase() === nameQueryParam.toLowerCase()) 
+                : data;
+
+            // If filterType is not 'all', further filter the data
+            filteredData = filterType !== 'all' 
+                ? filteredData.filter(issuance => issuance.type === filterType) 
+                : filteredData;
+            
+            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             const deployData = data.filter(issuance => issuance.type === 'deploy')
                 .reduce((obj, issuance) => {
-                    let nameRaw = issuance.description.split('|')[1];
-                    let name = nameRaw;
-                    // check if the name starts with 'U+' and the rest of it is a valid hexadecimal number
-                    if(nameRaw.startsWith('U+') && !isNaN(Number('0x' + nameRaw.slice(2)))) {
-                        name = String.fromCodePoint('0x' + nameRaw.slice(2));
-                    }
-
+                    const name = issuance.description.split('|')[1];
                     obj[name] = issuance.image;
                     return obj;
                 }, {});
 
             for (let index = 0; index < filteredData.length; index++) {
                 const issuance = filteredData[index];
-                let nameRaw = issuance.description.split('|')[1];
-                let name = nameRaw;
-                // check if the name starts with 'U+' and the rest of it is a valid hexadecimal number
-                if(nameRaw.startsWith('U+') && !isNaN(Number('0x' + nameRaw.slice(2)))) {
-                    name = String.fromCodePoint('0x' + nameRaw.slice(2));
-                }
-
+                const name = issuance.description.split('|')[1];
                 const imageSrc = issuance.image || deployData[name];
                 const row = document.createElement('tr');
                 Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
                 row.cells[0].textContent = index;
-                row.cells[1].innerHTML = `<img src="${imageSrc}" />`;
+                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
                 row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
                 row.cells[3].textContent = issuance.type;
                 row.cells[4].textContent = issuance.supply;
@@ -79,15 +116,50 @@
 
                 let dispenserLink = '';
                 let dispenserText = '';
-                if (dispenserData?.data?.length > 0) {
+                if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
                     dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
                     const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
                     dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
                 }
+
                 row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
+                row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
                 result.appendChild(row);
-            };
+            }
             loader.style.display = 'none';
+        }
+
+        function showTokenPage(asset, tokenName) {
+            const modal = document.getElementById('tokenPageModal');
+            const tokenDetails = document.getElementById('tokenDetails');
+            const assetRow = document.getElementById(asset);
+
+            const filteredData = Array.from(assetRow.parentElement.children)
+                .filter(row => row.cells[2].textContent === tokenName); // Filter rows with the same token name
+
+            // Generate the HTML content for the token details
+            let html = '';
+            for (let index = 0; index < filteredData.length; index++) {
+                const row = filteredData[index];
+                const deploy = row.cells[0].textContent;
+                const mint = row.cells[1].textContent;
+
+                html += `<p>Deploy: ${deploy}</p>`;
+                html += `<p>Mint #${index + 1}: ${mint}</p>`;
+            }
+
+            // Update the modal content with the generated HTML
+            tokenDetails.innerHTML = html;
+            modal.style.display = 'block';
+        }
+
+        function hideTokenPageModal() {
+            const modal = document.getElementById('tokenPageModal');
+            modal.style.display = 'none';
+        }
+
+        function createTableCell(elementType = 'td') {
+            return document.createElement(elementType);
         }
 
         // Add event listener for the filter select
