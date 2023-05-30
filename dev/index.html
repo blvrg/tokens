@@ -14,107 +14,126 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>btc tokens (xrc-20)</h1>
-        <select id="filterSelect">
-            <option value="all">All</option>
-            <option value="deploy">Deploy</option>
-            <option value="mint">Mint</option>
-        </select>
-    </div>
-    <table id="result"></table>
-    <div id="loader"></div>
+ <div class="header">
+    <h1>btc tokens (xrc-20)</h1>
+    <select id="filterSelect">
+        <option value="all">All</option>
+        <option value="deploy">Deploy</option>
+        <option value="mint">Mint</option>
+    </select>
+</div>
+<table id="result"></table>
+<div id="loader"></div>
 
-    <script>
-        const SITE_URL = 'https://xchain.io/';
-        const API_URL = 'https://xchain.io/api/';
-        const dispenserCache = {};
+<script>
+    const SITE_URL = 'https://xchain.io/';
+    const API_URL = 'https://xchain.io/api/';
+    const dispenserCache = {};
+    const tokenImages = {}; // New variable to store token images
 
-        function createTableCell(elementType = 'td') {
-            return document.createElement(elementType);
+    function createTableCell(elementType = 'td') {
+        return document.createElement(elementType);
+    }
+
+    // Function to get a query parameter by name
+    function getFirstQueryParam() {
+        const urlParams = new URLSearchParams(window.location.search);
+        for(let param of urlParams.keys()) {
+            return param;
         }
+        return null;
+    }
 
-        // Function to get a query parameter by name
-        function getFirstQueryParam() {
-            const urlParams = new URLSearchParams(window.location.search);
-            for(let param of urlParams.keys()) {
-                return param;
+    async function getImageData(imgData, tokenName) {
+        if (!imgData) return '';
+
+        if (imgData.startsWith('A')) {
+            const assetData = await (await fetch(API_URL + 'asset/' + imgData)).json();
+            if (assetData && assetData.description && assetData.description.toLowerCase().startsWith('stamp:')) {
+                imgData = assetData.description.replace(/stamp:/i, '');
+            } else {
+                imgData = assetData.description;
             }
-            return null;
         }
+        const imageData = 'data:image/png;base64,' + imgData;
+        tokenImages[tokenName] = imageData; // Store image data by token name
 
-        async function loadIssuances() {
-            const filterSelect = document.getElementById('filterSelect');
-            const filterType = filterSelect.value; // Get the selected filter type
-            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
-            const nameQueryParam = getFirstQueryParam();
+        return imageData;
+    }
 
-            let filteredData = nameQueryParam 
-                ? data.filter(issuance => issuance.name === nameQueryParam) 
-                : data;
+    async function loadIssuances() {
+        const filterSelect = document.getElementById('filterSelect');
+        const filterType = filterSelect.value; // Get the selected filter type
+        const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+        const nameQueryParam = getFirstQueryParam();
 
-            filteredData = filterType !== 'all' 
-                ? filteredData.filter(issuance => issuance.type === filterType) 
-                : filteredData;
+        let filteredData = nameQueryParam 
+            ? data.filter(issuance => issuance.name === nameQueryParam) 
+            : data;
 
-            const endBlock = parseInt(await (await fetch('https://blockchain.info/q/getblockcount')).text());
-            const startBlock = filteredData[filteredData.length - 1].block_index;
+        filteredData = filterType !== 'all' 
+            ? filteredData.filter(issuance => issuance.type === filterType) 
+            : filteredData;
 
-            for (let i = startBlock; i <= endBlock; i++) {
-                const issuances = await (await fetch(`${API_URL}issuances/${i}`)).json();
-    
-            // If filterType is not 'all', further filter the data
-            filteredData = filterType !== 'all' 
-                ? filteredData.filter(issuance => issuance.type === filterType) 
-                : filteredData;
+        const endBlock = parseInt(await (await fetch('https://blockchain.info/q/getblockcount')).text());
+        const startBlock = filteredData[filteredData.length - 1].block_index;
 
-            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
-            const deployData = data.filter(issuance => issuance.type === 'deploy')
-                .reduce((obj, issuance) => {
-                    const name = issuance.description.split('|')[1];
-                    obj[name] = issuance.image;
-                    return obj;
-                }, {});
+        result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
 
-            for (let index = 0; index < filteredData.length; index++) {
-                const issuance = filteredData[index];
-                const name = issuance.description.split('|')[1];
-                const imageSrc = issuance.image || deployData[name];
-                const row = document.createElement('tr');
-                Array.from({ length: 10 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
-                row.cells[0].textContent = index;
-                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
-                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
-                row.cells[3].textContent = issuance.type;
-                row.cells[4].textContent = issuance.supply;
-                row.cells[5].textContent = issuance.maxMint || '';
+        for (let i = startBlock; i <= endBlock; i++) {
+            const issuances = await (await fetch(`${API_URL}issuances/${i}`)).json();
+            loader.textContent = `Loading block ${i} out of ${endBlock}`;
 
-                const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
-                dispenserCache[issuance.asset] = dispenserData;
+            issuances.data.forEach(async (issuance) => {
+                if(['token:deploy', 'token:mint'].some(start => issuance.description.toLowerCase().startsWith(start))) {
+                    let params = issuance.description.split('|'), row = document.createElement('tr');
+                    const tokenType = issuance.description.toLowerCase().startsWith('token:deploy') ? 'deploy' : 'mint';  // determine the token type
+                    let imageData;
+                    if(tokenType === 'mint' && tokenImages[params[1]]) {
+                        // If this is a mint and we have an image for this token name, use it
+                        imageData = tokenImages[params[1]];
+                    } else {
+                        // Otherwise, fetch the image as normal
+                        imageData = await getImageData(params[4], params[1]);
+                    }
 
-                let dispenserLink = '';
-                let dispenserText = '';
-                if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
-                    dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
-                    const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
-                    dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
+                    Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
+
+                    row.cells[0].textContent = filteredData.length + 1; // currentResults in old code
+                    row.cells[1].innerHTML = `<img src="${imageData}" onclick="showTokenPage('${issuance.asset}', '${params[1]}')"/>`;
+                    row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${params[1]}</a>`;
+                    row.cells[3].textContent = tokenType;
+                    row.cells[4].textContent = params[2];
+                    row.cells[5].textContent = issuance.description.toLowerCase().startsWith('token:deploy') ? params[3] : ''; //max_mint for token:deploy
+
+                    const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
+                    dispenserCache[issuance.asset] = dispenserData;
+
+                    let dispenserLink = '';
+                    let dispenserText = '';
+                    if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
+                        dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
+                        const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
+                        dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
+                    }
+
+                    row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
+                    row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
+
+                    result.appendChild(row);
+                    filteredData.push(issuance); // add complete issuance data to results array
                 }
+            });
 
-                row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
-                row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
-                result.appendChild(row);
+            if(i === endBlock) {
+                loader.style.display = 'none';
             }
-            loader.style.display = 'none';
         }
-        }
+    }
 
-        function createTableCell(elementType = 'td') {
-            return document.createElement(elementType);
-        }
-
-        // Add event listener for the filter select
-        document.getElementById('filterSelect').addEventListener('change', loadIssuances);
-        window.onload = loadIssuances;  // Load issuances when the page loads
-    </script>
+    // Add event listener for the filter select
+    document.getElementById('filterSelect').addEventListener('change', loadIssuances);
+    window.onload = loadIssuances;  // Load issuances when the page loads
+</script>
 </body>
 </html>
