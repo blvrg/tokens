@@ -11,34 +11,6 @@
         img {width:75px; height:75px; image-rendering:pixelated; cursor: pointer;}
         .header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem}
         td {text-align:center}
-        /* Modal styles */
-        #tokenPageModal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        .modal-content {
-            background-color: #fff;
-            margin: 15% auto;
-            padding: 20px;
-            width: 60%;
-            max-width: 600px;
-            border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        .close-btn {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -50,15 +22,8 @@
             <option value="mint">Mint</option>
         </select>
     </div>
-    <div id="loader"></div>
     <table id="result"></table>
-    <div id="tokenPageModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="hideTokenPageModal()">&times;</span>
-            <h2>Token Details</h2>
-            <div id="tokenDetails"></div>
-        </div>
-    </div>
+    <div id="loader"></div>
 
     <script>
         const SITE_URL = 'https://xchain.io/';
@@ -73,30 +38,22 @@
         function getFirstQueryParam() {
             const urlParams = new URLSearchParams(window.location.search);
             for(let param of urlParams.keys()) {
-                return decodeURIComponent(param);
+                return param;
             }
             return null;
         }
 
-         async function loadIssuances() {
+        async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
-            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
+            const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
             const nameQueryParam = getFirstQueryParam();
 
             // If nameQueryParam is not null, filter the data
             let filteredData = nameQueryParam 
-                ? data.filter(issuance => {
-                    // Check if issuance.name is in 'U+XXXX' format
-                    if (issuance.name && issuance.name.startsWith('U+') && issuance.name.length > 2) {
-                        const codePoint = parseInt(issuance.name.substring(2), 16);
-                        if (!isNaN(codePoint)) {
-                            return String.fromCodePoint(codePoint) === nameQueryParam;
-                        }
-                    }
-                    return false;
-                }) 
+                ? data.filter(issuance => issuance.name === nameQueryParam) 
                 : data;
+
             // If filterType is not 'all', further filter the data
             filteredData = filterType !== 'all' 
                 ? filteredData.filter(issuance => issuance.type === filterType) 
@@ -112,13 +69,13 @@
 
             for (let index = 0; index < filteredData.length; index++) {
                 const issuance = filteredData[index];
-                const name = String.fromCodePoint('0x' + issuance.name.substring(2));
+                const name = issuance.description.split('|')[1];
                 const imageSrc = issuance.image || deployData[name];
                 const row = document.createElement('tr');
-                Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
+                Array.from({ length: 10 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
                 row.cells[0].textContent = index;
-                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${encodeURIComponent(name)}')"/>`;
-                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${encodeURIComponent(issuance.asset)}">${name}</a>`;
+                row.cells[1].innerHTML = `<img src="${imageSrc}"/>`;
+                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
                 row.cells[3].textContent = issuance.type;
                 row.cells[4].textContent = issuance.supply;
                 row.cells[5].textContent = issuance.maxMint || '';
@@ -141,39 +98,9 @@
             loader.style.display = 'none';
         }
 
-        function showTokenPage(asset, tokenName) {
-            const modal = document.getElementById('tokenPageModal');
-            const tokenDetails = document.getElementById('tokenDetails');
-            const assetRow = document.getElementById(asset);
-
-            const filteredData = Array.from(assetRow.parentElement.children)
-                .filter(row => row.cells[2].textContent === decodeURIComponent(tokenName)); // Filter rows with the same token name
-
-            // Generate the HTML content for the token details
-            let html = '';
-            for (let index = 0; index < filteredData.length; index++) {
-                const row = filteredData[index];
-                const deploy = row.cells[0].textContent;
-                const mint = row.cells[1].textContent;
-
-                html += `<p>Deploy: ${deploy}</p>`;
-                html += `<p>Mint #${index + 1}: ${mint}</p>`;
-            }
-
-            // Update the modal content with the generated HTML
-            tokenDetails.innerHTML = html;
-            modal.style.display = 'block';
-        }
-
-        function hideTokenPageModal() {
-            const modal = document.getElementById('tokenPageModal');
-            modal.style.display = 'none';
-        }
-
         // Add event listener for the filter select
         document.getElementById('filterSelect').addEventListener('change', loadIssuances);
         window.onload = loadIssuances;  // Load issuances when the page loads
-
     </script>
 </body>
 </html>
