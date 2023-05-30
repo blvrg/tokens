@@ -49,16 +49,19 @@
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
             const nameQueryParam = getFirstQueryParam();
 
-            // If nameQueryParam is not null, filter the data
             let filteredData = nameQueryParam 
                 ? data.filter(issuance => issuance.name === nameQueryParam) 
                 : data;
 
-            // If filterType is not 'all', further filter the data
             filteredData = filterType !== 'all' 
                 ? filteredData.filter(issuance => issuance.type === filterType) 
                 : filteredData;
 
+            const endBlock = parseInt(await (await fetch('https://blockchain.info/q/getblockcount')).text());
+            const startBlock = filteredData[filteredData.length - 1].block_index;
+
+            for (let i = startBlock; i <= endBlock; i++) {
+                const issuances = await (await fetch(`${API_URL}issuances/${i}`)).json();
             // If filterType is not 'all', further filter the data
             filteredData = filterType !== 'all' 
                 ? filteredData.filter(issuance => issuance.type === filterType) 
