@@ -78,7 +78,7 @@
             return null;
         }
 
-        async function loadIssuances() {
+         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
@@ -86,9 +86,17 @@
 
             // If nameQueryParam is not null, filter the data
             let filteredData = nameQueryParam 
-                ? data.filter(issuance => String.fromCodePoint('0x' + issuance.name.substring(2)) === nameQueryParam) 
+                ? data.filter(issuance => {
+                    // Check if issuance.name is in 'U+XXXX' format
+                    if (issuance.name && issuance.name.startsWith('U+') && issuance.name.length > 2) {
+                        const codePoint = parseInt(issuance.name.substring(2), 16);
+                        if (!isNaN(codePoint)) {
+                            return String.fromCodePoint(codePoint) === nameQueryParam;
+                        }
+                    }
+                    return false;
+                }) 
                 : data;
-
             // If filterType is not 'all', further filter the data
             filteredData = filterType !== 'all' 
                 ? filteredData.filter(issuance => issuance.type === filterType) 
