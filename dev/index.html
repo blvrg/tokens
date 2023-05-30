@@ -14,7 +14,7 @@
     </style>
 </head>
 <body>
- <div class="header">
+<div class="header">
     <h1>btc tokens (xrc-20)</h1>
     <select id="filterSelect">
         <option value="all">All</option>
@@ -78,7 +78,9 @@
         const endBlock = parseInt(await (await fetch('https://blockchain.info/q/getblockcount')).text());
         const startBlock = filteredData[filteredData.length - 1].block_index;
 
-        result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
+        if (!document.getElementById('result').hasChildNodes()) {
+            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
+        }
 
         for (let i = startBlock; i <= endBlock; i++) {
             const issuances = await (await fetch(`${API_URL}issuances/${i}`)).json();
@@ -100,8 +102,8 @@
                     Array.from({ length: 7 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
 
                     row.cells[0].textContent = filteredData.length + 1; // currentResults in old code
-                    row.cells[1].innerHTML = `<img src="${imageData}" onclick="showTokenPage('${issuance.asset}', '${params[1]}')"/>`;
-                    row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${params[1]}</a>`;
+                    row.cells[1].innerHTML = `<img src="${imageData}" onclick="window.open('${SITE_URL}asset/${issuance.asset}', '_blank')"/>`;
+                    row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}" target="_blank">${params[1]}</a>`;
                     row.cells[3].textContent = tokenType;
                     row.cells[4].textContent = params[2];
                     row.cells[5].textContent = issuance.description.toLowerCase().startsWith('token:deploy') ? params[3] : ''; //max_mint for token:deploy
@@ -117,7 +119,7 @@
                         dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
                     }
 
-                    row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
+                    row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}" target="_blank">${dispenserText}</a>` : '';
                     row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
 
                     result.appendChild(row);
