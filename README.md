@@ -1,33 +1,50 @@
-# btc tokens (xrc-20)
+# BTC Tokens (XRC-20)
 
-## deploy
+## Functions
 
-deploy new token with quantity = 1
+### Deploy
 
-` token:deploy|name|supply|max_mint|base64_image `
+- ` token:deploy|name|supply|max_mint|image`
 
-` token:deploy|name|supply|max_mint|stamp_name `
+### Mint
 
-names can be
-- alphanumberic
-- unicode `u+xxxx`
+- ` token:mint|name|amount ` 
 
-images can be
-- a base64 encoded image string
-- the asset name of a stamp (eg. A7337447728884561000)
+### Variables
 
-## mint
+- `name` - The name of the token
+  - Alphanumberic OR
+  - Unicode symbol `u+xxxx` 
+- `supply` - The total supply amount
+- `max_mint` - The max mint amount
+- `image`
+  - Base64 encoded image OR
+  - Numeric asset name ( eg. `A7337447728884561000`)
+- `amount` - The amount to mint.
 
-mint tokens with quantity not more than max_mint
+**No commas on `supply`, `max_mint` & `amount`**
 
-` token:mint|name|amount ` 
+## Deploy
 
-note: `amount` in the token mint function should match `quantity` of token mint
+`actions -> create token`
 
-## beta
+![](dev/deploy.png)
 
-### divisible tokens
+When deploying a new token, do so with `quantity = 1`.
 
-all tokens currently deployed are non-divisble
+### Example
 
-experimentation is in order..
+`token:deploy|example|1000|10|A7337447728884561000`
+
+## Mint
+
+`actions -> create token`
+
+![](dev/mint.png)
+
+- Mint tokens with `amount` less than or equal to `max_mint`.
+- `amount` in the token mint function should match `quantity` of token mint
+
+### Example
+
+`token:mint|example|10` with `quantity = 10` 
