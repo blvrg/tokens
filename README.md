@@ -48,3 +48,29 @@ When deploying a new token, do so with `quantity = 1`.
 ### Example
 
 `token:mint|example|10` with `quantity = 10` 
+
+## Experimental
+
+### Wrapped SRC-20
+
+`actions -> create token`
+
+![](dev/wrap.png)
+
+Format - `token:wrap|tick|AXXXXXXXXXXXXXXXXXXXX`
+
+Example - `token:wrap|kevin|A18339685096327903682`
+
+Ensure `quanity` is equal to the amount of the SRC-20 tokens being wrapped.
+
+**Note** Only tokens minted to wallets that hold the corresponding SRC-20 are considered valid
+
+### Why
+
+- BTC Based
+  - wSRC-20 tokens live on BTC just like SRC-20
+  - Verification of ownership via XCP
+
+- Once tokens are wrapped they can be 
+  - Listed for sale in a dispenser
+  - Traded for other tokens 
