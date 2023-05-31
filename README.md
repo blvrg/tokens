@@ -20,7 +20,7 @@
 - `image`
   - Base64 encoded image OR
   - Numeric asset name ( eg. `A7337447728884561000`)
-- `amount` - The amount to mint.
+- `amount` - The amount to mint
 
 **No commas on `supply`, `max_mint` & `amount`**
 
