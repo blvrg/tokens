@@ -29,25 +29,31 @@
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
         const dispenserCache = {};
-        
+
         function createTableCell(elementType = 'td') {
             return document.createElement(elementType);
         }
 
         // Function to get a query parameter by name
-        function getFirstQueryParam() {
+        function getQueryParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
-            for(let param of urlParams.keys()) {
-                return param;
-            }
-            return null;
+            return urlParams.get(name);
+        }
+
+        // Function to set a query parameter's value
+        function setQueryParam(name, value) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set(name, value);
+            // Update the URL without reloading the page
+            window.history.pushState({}, '', '?' + urlParams.toString());
         }
 
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
+            setQueryParam('type', filterType); // Update the URL with the selected filter type
             const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
-            const nameQueryParam = getFirstQueryParam();
+            const nameQueryParam = getQueryParam('tick');
 
             // If nameQueryParam is not null, filter the data
             let filteredData = nameQueryParam 
@@ -58,7 +64,7 @@
             filteredData = filterType !== 'all' 
                 ? filteredData.filter(issuance => issuance.type === filterType) 
                 : filteredData;
-            
+
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             const deployData = data.filter(issuance => issuance.type === 'deploy')
                 .reduce((obj, issuance) => {
@@ -100,7 +106,13 @@
 
         // Add event listener for the filter select
         document.getElementById('filterSelect').addEventListener('change', loadIssuances);
-        window.onload = loadIssuances;  // Load issuances when the page loads
+        window.onload = function() {
+            const filterType = getQueryParam('type');
+            if (filterType) {
+                document.getElementById('filterSelect').value = filterType;
+            }
+            loadIssuances();  // Load issuances when the page loads
+        }   
     </script>
 </body>
 </html>
