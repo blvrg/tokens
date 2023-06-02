@@ -29,79 +29,42 @@
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
         const dispenserCache = {};
-        
+
         function createTableCell(elementType = 'td') {
             return document.createElement(elementType);
         }
 
-        // Function to get the value of a query parameter by name
-        function getQueryParamValue(param) {
-          const urlParams = new URLSearchParams(window.location.search);
-          return urlParams.get(param);
+        // Function to get a query parameter by name
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
         }
 
-        // Function to update the URL with new query parameters
-        function updateURLParams(params) {
-          const urlParams = new URLSearchParams(window.location.search);
-          for (let param in params) {
-            urlParams.set(param, params[param]);
-          }
-          const newURL = window.location.pathname + '?' + urlParams.toString();
-          window.history.replaceState(null, '', newURL);
-        }
-
-        // Function to handle filter changes and trigger data loading
-        function handleFilterChange() {
-          const tickInput = document.getElementById('tickInput');
-          const filterSelect = document.getElementById('filterSelect');
-          const tickValue = tickInput.value.trim();
-          const filterValue = filterSelect.value;
-
-          const queryParams = {};
-          if (tickValue !== '') {
-            queryParams.tick = tickValue;
-          }
-          if (filterValue !== 'all') {
-            queryParams.filter = filterValue;
-          }
-
-          updateURLParams(queryParams);
-          loadIssuances();
-        }
-
-        // Function to initialize the filter input and select with URL parameters
-        function initFilterValues() {
-          const tickInput = document.getElementById('tickInput');
-          const filterSelect = document.getElementById('filterSelect');
-          const tickValue = getQueryParamValue('tick');
-          const filterValue = getQueryParamValue('filter');
-
-          if (tickValue !== null) {
-            tickInput.value = tickValue;
-          }
-          if (filterValue !== null) {
-            filterSelect.value = filterValue;
-          }
+        // Function to set a query parameter's value
+        function setQueryParam(name, value) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set(name, value);
+            // Update the URL without reloading the page
+            window.history.pushState({}, '', '?' + urlParams.toString());
         }
 
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
+            setQueryParam('type', filterType); // Update the URL with the selected filter type
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
-          const nameQueryParam = getQueryParamValue('tick');
-          const filterQueryParam = getQueryParamValue('filter');
+            const nameQueryParam = getQueryParam('tick');
 
-          // If nameQueryParam is not null, filter the data
-          let filteredData = nameQueryParam
-            ? data.filter(issuance => issuance.tick === nameQueryParam)
-            : data;
+            // If nameQueryParam is not null, filter the data
+            let filteredData = nameQueryParam 
+                ? data.filter(issuance => issuance.name === nameQueryParam) 
+                : data;
 
-          // If filterQueryParam is not null and not 'all', further filter the data
-          filteredData = filterQueryParam !== null && filterQueryParam !== 'all'
-            ? filteredData.filter(issuance => issuance.type === filterQueryParam)
-            : filteredData;
+            // If filterType is not 'all', further filter the data
+            filteredData = filterType !== 'all' 
+                ? filteredData.filter(issuance => issuance.type === filterType) 
+                : filteredData;
 
-            
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             const deployData = data.filter(issuance => issuance.type === 'deploy')
                 .reduce((obj, issuance) => {
@@ -141,17 +104,9 @@
             loader.style.display = 'none';
         }
 
-// Add event listener for the filter input
-document.getElementById('tickInput').addEventListener('input', handleFilterChange);
-
-// Add event listener for the filter select
-document.getElementById('filterSelect').addEventListener('change', handleFilterChange);
-
-// Call initFilterValues on page load to populate filter input and select with URL parameters
-window.onload = function() {
-  initFilterValues();
-  loadIssuances();
-};
+        // Add event listener for the filter select
+        document.getElementById('filterSelect').addEventListener('change', loadIssuances);
+        window.onload = loadIssuances;  // Load issuances when the page loads
     </script>
 </body>
 </html>
