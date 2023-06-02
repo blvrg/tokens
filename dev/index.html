@@ -45,7 +45,7 @@
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
-            const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
+            const data = await (await fetch('data.json')).json(); // Load data from local JSON file
             const nameQueryParam = getFirstQueryParam();
 
             // If nameQueryParam is not null, filter the data
