@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>btc tokens (xrc-20)</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍍</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐸</text></svg>">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
         * {font-family: 'VT323', monospace;}
@@ -20,6 +20,7 @@
             <option value="all">All</option>
             <option value="deploy">Deploy</option>
             <option value="mint">Mint</option>
+            <option value="wrap">Wrap</option>
         </select>
     </div>
     <div id="loader"></div>
@@ -52,11 +53,6 @@
             let filteredData = nameQueryParam 
                 ? data.filter(issuance => issuance.name === nameQueryParam) 
                 : data;
-
-            // If filterType is not 'all', further filter the data
-            filteredData = filterType !== 'all' 
-                ? filteredData.filter(issuance => issuance.type === filterType) 
-                : filteredData;
 
             // If filterType is not 'all', further filter the data
             filteredData = filterType !== 'all' 
@@ -100,11 +96,6 @@
                 result.appendChild(row);
             }
             loader.style.display = 'none';
-        }
-
-
-        function createTableCell(elementType = 'td') {
-            return document.createElement(elementType);
         }
 
         // Add event listener for the filter select
