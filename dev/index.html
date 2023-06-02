@@ -83,6 +83,7 @@
                 const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
                 dispenserCache[issuance.asset] = dispenserData;
 
+                let dispenserLink = '';
                 let dispenserText = '';
                 if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
                     dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
