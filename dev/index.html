@@ -34,30 +34,73 @@
             return document.createElement(elementType);
         }
 
-        // Function to get a query parameter by name
-        function getFirstQueryParam() {
-            const urlParams = new URLSearchParams(window.location.search);
-            for(let param of urlParams.keys()) {
-                return param;
-            }
-            return null;
+        // Function to get the value of a query parameter by name
+        function getQueryParamValue(param) {
+          const urlParams = new URLSearchParams(window.location.search);
+          return urlParams.get(param);
+        }
+
+        // Function to update the URL with new query parameters
+        function updateURLParams(params) {
+          const urlParams = new URLSearchParams(window.location.search);
+          for (let param in params) {
+            urlParams.set(param, params[param]);
+          }
+          const newURL = window.location.pathname + '?' + urlParams.toString();
+          window.history.replaceState(null, '', newURL);
+        }
+
+        // Function to handle filter changes and trigger data loading
+        function handleFilterChange() {
+          const tickInput = document.getElementById('tickInput');
+          const filterSelect = document.getElementById('filterSelect');
+          const tickValue = tickInput.value.trim();
+          const filterValue = filterSelect.value;
+
+          const queryParams = {};
+          if (tickValue !== '') {
+            queryParams.tick = tickValue;
+          }
+          if (filterValue !== 'all') {
+            queryParams.filter = filterValue;
+          }
+
+          updateURLParams(queryParams);
+          loadIssuances();
+        }
+
+        // Function to initialize the filter input and select with URL parameters
+        function initFilterValues() {
+          const tickInput = document.getElementById('tickInput');
+          const filterSelect = document.getElementById('filterSelect');
+          const tickValue = getQueryParamValue('tick');
+          const filterValue = getQueryParamValue('filter');
+
+          if (tickValue !== null) {
+            tickInput.value = tickValue;
+          }
+          if (filterValue !== null) {
+            filterSelect.value = filterValue;
+          }
         }
 
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
             const filterType = filterSelect.value; // Get the selected filter type
             const data = await (await fetch('data.json')).json(); // Load data from local JSON file
-            const nameQueryParam = getFirstQueryParam();
+          const nameQueryParam = getQueryParamValue('tick');
+          const filterQueryParam = getQueryParamValue('filter');
 
-            // If nameQueryParam is not null, filter the data
-            let filteredData = nameQueryParam 
-                ? data.filter(issuance => issuance.name === nameQueryParam) 
-                : data;
+          // If nameQueryParam is not null, filter the data
+          let filteredData = nameQueryParam
+            ? data.filter(issuance => issuance.tick === nameQueryParam)
+            : data;
 
-            // If filterType is not 'all', further filter the data
-            filteredData = filterType !== 'all' 
-                ? filteredData.filter(issuance => issuance.type === filterType) 
-                : filteredData;
+          // If filterQueryParam is not null and not 'all', further filter the data
+          filteredData = filterQueryParam !== null && filterQueryParam !== 'all'
+            ? filteredData.filter(issuance => issuance.type === filterQueryParam)
+            : filteredData;
+
             
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             const deployData = data.filter(issuance => issuance.type === 'deploy')
@@ -98,9 +141,17 @@
             loader.style.display = 'none';
         }
 
-        // Add event listener for the filter select
-        document.getElementById('filterSelect').addEventListener('change', loadIssuances);
-        window.onload = loadIssuances;  // Load issuances when the page loads
+// Add event listener for the filter input
+document.getElementById('tickInput').addEventListener('input', handleFilterChange);
+
+// Add event listener for the filter select
+document.getElementById('filterSelect').addEventListener('change', handleFilterChange);
+
+// Call initFilterValues on page load to populate filter input and select with URL parameters
+window.onload = function() {
+  initFilterValues();
+  loadIssuances();
+};
     </script>
 </body>
 </html>
