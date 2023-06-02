@@ -11,34 +11,6 @@
         img {width:75px; height:75px; image-rendering:pixelated; cursor: pointer;}
         .header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem}
         td {text-align:center}
-        /* Modal styles */
-        #tokenPageModal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        .modal-content {
-            background-color: #fff;
-            margin: 15% auto;
-            padding: 20px;
-            width: 60%;
-            max-width: 600px;
-            border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        .close-btn {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -138,34 +110,6 @@
             loader.style.display = 'none';
         }
 
-        function showTokenPage(asset, tokenName) {
-            const modal = document.getElementById('tokenPageModal');
-            const tokenDetails = document.getElementById('tokenDetails');
-            const assetRow = document.getElementById(asset);
-
-            const filteredData = Array.from(assetRow.parentElement.children)
-                .filter(row => row.cells[2].textContent === tokenName); // Filter rows with the same token name
-
-            // Generate the HTML content for the token details
-            let html = '';
-            for (let index = 0; index < filteredData.length; index++) {
-                const row = filteredData[index];
-                const deploy = row.cells[0].textContent;
-                const mint = row.cells[1].textContent;
-
-                html += `<p>Deploy: ${deploy}</p>`;
-                html += `<p>Mint #${index + 1}: ${mint}</p>`;
-            }
-
-            // Update the modal content with the generated HTML
-            tokenDetails.innerHTML = html;
-            modal.style.display = 'block';
-        }
-
-        function hideTokenPageModal() {
-            const modal = document.getElementById('tokenPageModal');
-            modal.style.display = 'none';
-        }
 
         function createTableCell(elementType = 'td') {
             return document.createElement(elementType);
