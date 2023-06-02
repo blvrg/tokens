@@ -20,6 +20,7 @@
             <option value="all">All</option>
             <option value="deploy">Deploy</option>
             <option value="mint">Mint</option>
+            <option value="wrap">Wrap</option>
         </select>
     </div>
     <div id="loader"></div>
@@ -57,11 +58,6 @@
             filteredData = filterType !== 'all' 
                 ? filteredData.filter(issuance => issuance.type === filterType) 
                 : filteredData;
-
-            // If filterType is not 'all', further filter the data
-            filteredData = filterType !== 'all' 
-                ? filteredData.filter(issuance => issuance.type === filterType) 
-                : filteredData;
             
             result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
             const deployData = data.filter(issuance => issuance.type === 'deploy')
@@ -87,7 +83,6 @@
                 const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
                 dispenserCache[issuance.asset] = dispenserData;
 
-                let dispenserLink = '';
                 let dispenserText = '';
                 if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
                     dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
@@ -100,11 +95,6 @@
                 result.appendChild(row);
             }
             loader.style.display = 'none';
-        }
-
-
-        function createTableCell(elementType = 'td') {
-            return document.createElement(elementType);
         }
 
         // Add event listener for the filter select
