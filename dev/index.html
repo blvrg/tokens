@@ -106,7 +106,13 @@
 
         // Add event listener for the filter select
         document.getElementById('filterSelect').addEventListener('change', loadIssuances);
-        window.onload = loadIssuances;  // Load issuances when the page loads
+        window.onload = function() {
+            const filterType = getQueryParam('type');
+            if (filterType) {
+                document.getElementById('filterSelect').value = filterType;
+            }
+            loadIssuances();  // Load issuances when the page loads
+        }   
     </script>
 </body>
 </html>
