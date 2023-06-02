@@ -1,75 +1,123 @@
-const SITE_URL = 'https://xchain.io/';
-const API_URL = 'https://xchain.io/api/';
-const dispenserCache = {};
+<!DOCTYPE html>
+<html>
+<head>
+    <title>btc tokens (xrc-20)</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍍</text></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        * {font-family: 'VT323', monospace;}
+        body {width:60%; margin:0 auto; font-size: 1.5rem;}
+        table {width:100%;}
+        img {width:75px; height:75px; image-rendering:pixelated; cursor: pointer;}
+        .header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem}
+        td {text-align:center}
+    </style>
+</head>
+<body>
+    <div class="header">
+    <h1>btc tokens (<a href="https://github.com/blvrg/tokens#readme">xrc-20 docs</a>)</h1>
+        <select id="filterSelect">
+            <option value="all">All</option>
+            <option value="deploy">Deploy</option>
+            <option value="mint">Mint</option>
+        </select>
+    </div>
+    <div id="loader"></div>
+    <table id="result"></table>
+    <div id="tokenPageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="hideTokenPageModal()">&times;</span>
+            <h2>Token Details</h2>
+            <div id="tokenDetails"></div>
+        </div>
+    </div>
 
-function createTableCell(elementType = 'td') {
-  return document.createElement(elementType);
-}
+    <script>
+        const SITE_URL = 'https://xchain.io/';
+        const API_URL = 'https://xchain.io/api/';
+        const dispenserCache = {};
+        
+        function createTableCell(elementType = 'td') {
+            return document.createElement(elementType);
+        }
 
-// Function to get a query parameter by name
-function getFirstQueryParam() {
-  const urlParams = new URLSearchParams(window.location.search);
-  for (let param of urlParams.keys()) {
-    return param;
-  }
-  return null;
-}
+        // Function to get a query parameter by name
+        function getFirstQueryParam() {
+            const urlParams = new URLSearchParams(window.location.search);
+            for(let param of urlParams.keys()) {
+                return param;
+            }
+            return null;
+        }
 
-async function loadIssuances() {
-  const filterSelect = document.getElementById('filterSelect');
-  const filterType = filterSelect.value; // Get the selected filter type
-  const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
-  const nameQueryParam = getFirstQueryParam();
+        async function loadIssuances() {
+            const filterSelect = document.getElementById('filterSelect');
+            const filterType = filterSelect.value; // Get the selected filter type
+            const data = await (await fetch('dev/data.json')).json(); // Load data from local JSON file
+            const nameQueryParam = getFirstQueryParam();
 
-  // If nameQueryParam is not null, filter the data
-  let filteredData = nameQueryParam
-    ? data.filter(issuance => issuance.name === nameQueryParam)
-    : data;
+            // If nameQueryParam is not null, filter the data
+            let filteredData = nameQueryParam 
+                ? data.filter(issuance => issuance.name === nameQueryParam) 
+                : data;
 
-  // If filterType is not 'all', further filter the data
-  filteredData = filterType !== 'all'
-    ? filteredData.filter(issuance => issuance.type === filterType)
-    : filteredData;
+            // If filterType is not 'all', further filter the data
+            filteredData = filterType !== 'all' 
+                ? filteredData.filter(issuance => issuance.type === filterType) 
+                : filteredData;
 
-  result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
-  const deployData = data.filter(issuance => issuance.type === 'deploy')
-    .reduce((obj, issuance) => {
-      const name = issuance.description.split('|')[1];
-      obj[name] = issuance.image;
-      return obj;
-    }, {});
+            // If filterType is not 'all', further filter the data
+            filteredData = filterType !== 'all' 
+                ? filteredData.filter(issuance => issuance.type === filterType) 
+                : filteredData;
+            
+            result.innerHTML = '<tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr>';
+            const deployData = data.filter(issuance => issuance.type === 'deploy')
+                .reduce((obj, issuance) => {
+                    const name = issuance.description.split('|')[1];
+                    obj[name] = issuance.image;
+                    return obj;
+                }, {});
 
-  for (let index = 0; index < filteredData.length; index++) {
-    const issuance = filteredData[index];
-    const name = issuance.description.split('|')[1];
-    const imageSrc = issuance.image || deployData[name];
-    const row = document.createElement('tr');
-    Array.from({ length: 10 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
-    row.cells[0].textContent = index;
-    row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
-    row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">{"${name}"}</a>`;
-    row.cells[3].textContent = issuance.type;
-    row.cells[4].textContent = issuance.supply;
-    row.cells[5].textContent = issuance.maxMint || '';
+            for (let index = 0; index < filteredData.length; index++) {
+                const issuance = filteredData[index];
+                const name = issuance.description.split('|')[1];
+                const imageSrc = issuance.image || deployData[name];
+                const row = document.createElement('tr');
+                Array.from({ length: 10 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
+                row.cells[0].textContent = index;
+                row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
+                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
+                row.cells[3].textContent = issuance.type;
+                row.cells[4].textContent = issuance.supply;
+                row.cells[5].textContent = issuance.maxMint || '';
 
-    const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
-    dispenserCache[issuance.asset] = dispenserData;
+                const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
+                dispenserCache[issuance.asset] = dispenserData;
 
-    let dispenserLink = '';
-    let dispenserText = '';
-    if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
-      dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
-      const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
-      dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
-    }
+                let dispenserLink = '';
+                let dispenserText = '';
+                if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
+                    dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
+                    const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
+                    dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
+                }
 
-    row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
-    row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
-    result.appendChild(row);
-  }
-  loader.style.display = 'none';
-}
+                row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
+                row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
+                result.appendChild(row);
+            }
+            loader.style.display = 'none';
+        }
 
-// Add event listener for the filter select
-document.getElementById('filterSelect').addEventListener('change', loadIssuances);
-window.onload = loadIssuances; // Load issuances when the page loads
+
+        function createTableCell(elementType = 'td') {
+            return document.createElement(elementType);
+        }
+
+        // Add event listener for the filter select
+        document.getElementById('filterSelect').addEventListener('change', loadIssuances);
+        window.onload = loadIssuances;  // Load issuances when the page loads
+    </script>
+</body>
+</html>
