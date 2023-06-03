@@ -81,10 +81,18 @@
                 Array.from({ length: 10 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
                 row.cells[0].textContent = index;
                 row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
-                row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
+                if (issuance.type === 'wrap') {
+                    row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">w${name}</a>`;
+                } else {                
+                    row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
+                }
                 row.cells[3].textContent = issuance.type;
-                row.cells[4].textContent = issuance.supply;
-                row.cells[5].textContent = issuance.maxMint || '';
+                if (issuance.type === 'wrap') {
+                    row.cells[4].innerHTML = `<a href="${issuance.sourceLink}">${issuance.supply}</a>`;
+                } else {
+                    row.cells[4].textContent = issuance.supply;
+                }                
+               row.cells[5].textContent = issuance.maxMint || '';
 
                 const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
                 dispenserCache[issuance.asset] = dispenserData;
