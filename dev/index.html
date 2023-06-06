@@ -18,17 +18,25 @@
             gap: 1rem;
         }
 
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
         .grid-item {
-            border: 1px solid #ddd;
+            width: 30%;
+            border: 1px solid black;
+            margin-bottom: 2rem;
             padding: 1rem;
-            box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+            box-sizing: border-box;
         }
 
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>btc tokens (<a href="https://github.com/blvrg/tokens#readme">xrc-20 docs</a>)</h1>
+    <h1>btc tokens (<a href="https://github.com/blvrg/tokens#readme">xrc-20 docs</a>)</h1>
         <select id="filterSelect">
             <option value="all">All</option>
             <option value="deploy">Deploy</option>
@@ -36,20 +44,12 @@
             <option value="wrap">Wrap</option>
         </select>
     </div>
-    <div class="view-control">
-        <button id="table-view-btn">Table View</button>
-        <button id="grid-view-btn">Grid View</button>
-    </div>
     <div id="loader"></div>
-    <div id="result"></div>
+    <div id="grid" class="grid"></div>
     <script>
         const SITE_URL = 'https://xchain.io/';
         const API_URL = 'https://xchain.io/api/';
         const dispenserCache = {};
-
-        function createTableCell(elementType = 'td') {
-            return document.createElement(elementType);
-        }
 
         // Function to get a query parameter by name
         function getQueryParam(name) {
@@ -64,20 +64,6 @@
             // Update the URL without reloading the page
             window.history.pushState({}, '', '?' + urlParams.toString());
         }
-
-        // Start with the table view
-        let currentView = 'table';
-
-        // Add event listeners for the view control buttons
-        document.getElementById('table-view-btn').addEventListener('click', () => {
-            currentView = 'table';
-            loadIssuances();
-        });
-
-        document.getElementById('grid-view-btn').addEventListener('click', () => {
-            currentView = 'grid';
-            loadIssuances();
-        });
 
         async function loadIssuances() {
             const filterSelect = document.getElementById('filterSelect');
@@ -96,12 +82,8 @@
                 ? filteredData.filter(issuance => issuance.type === filterType) 
                 : filteredData;
 
-            result.innerHTML = '';
-            if (currentView === 'table') {
-                result.innerHTML = '<table><tr><th>#</th><th>Image</th><th>Name</th><th>Type</th><th>Supply</th><th>Max Mint</th><th>Dispenser</th></tr></table>';
-            } else {
-                result.classList.add('grid-view');
-            }
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';  // Clear the grid before repopulating
 
             const deployData = data.filter(issuance => issuance.type === 'deploy')
                 .reduce((obj, issuance) => {
@@ -115,88 +97,54 @@
                 const name = issuance.description.split('|')[1];
                 const imageSrc = issuance.image || deployData[name];
 
-                if (currentView === 'table') {
-                    const row = document.createElement('tr');
-                    Array.from({ length: 10 }, () => createTableCell()).forEach((cell, i) => row.appendChild(cell));
-                    row.cells[0].textContent = index;
-                    row.cells[1].innerHTML = `<img src="${imageSrc}" onclick="showTokenPage('${issuance.asset}', '${name}')"/>`;
-                    if (issuance.type === 'wrap') {
-                        row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">w${name}</a>`;
-                    } else {                
-                        row.cells[2].innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
-                    }
-                    row.cells[3].textContent = issuance.type;
-                    if (issuance.type === 'wrap') {
-                        row.cells[4].innerHTML = `<a href="${issuance.sourceLink}">${issuance.supply}</a>`;
-                    } else {
-                        row.cells[4].textContent = issuance.supply;
-                    }                
-                    row.cells[5].textContent = issuance.maxMint || '';
+                const gridItem = document.createElement('div');
+                gridItem.classList.add('grid-item');
 
-                    const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
-                    dispenserCache[issuance.asset] = dispenserData;
+                const img = document.createElement('img');
+                img.src = imageSrc;
+                img.onclick = () => showTokenPage(issuance.asset, name);
+                gridItem.appendChild(img);
 
-                    let dispenserLink = '';
-                    let dispenserText = '';
-                    if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
-                        dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
-                        const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
-                        dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
-                    }
-
-                    row.cells[6].innerHTML = dispenserLink ? `<a href="${dispenserLink}">${dispenserText}</a>` : '';
-                    row.setAttribute('id', issuance.asset); // Add ID to the row for referencing
-                    result.appendChild(row);
-                } else {
-                    const gridItem = document.createElement('div');
-                    gridItem.classList.add('grid-item');
-
-                    const img = document.createElement('img');
-                    img.src = imageSrc;
-                    img.onclick = () => showTokenPage(issuance.asset, name);
-                    gridItem.appendChild(img);
-
-                    const nameElement = document.createElement('p');
-                    if (issuance.type === 'wrap') {
-                        nameElement.innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">w${name}</a>`;
-                    } else {                
-                        nameElement.innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
-                    }
-                    gridItem.appendChild(nameElement);
-
-                    const typeElement = document.createElement('p');
-                    typeElement.textContent = `Type: ${issuance.type}`;
-                    gridItem.appendChild(typeElement);
-
-                    const supplyElement = document.createElement('p');
-                    if (issuance.type === 'wrap') {
-                        supplyElement.innerHTML = `<a href="${issuance.sourceLink}">Supply: ${issuance.supply}</a>`;
-                    } else {
-                        supplyElement.textContent = `Supply: ${issuance.supply}`;
-                    }
-                    gridItem.appendChild(supplyElement);
-
-                    const maxMintElement = document.createElement('p');
-                    maxMintElement.textContent = `Max Mint: ${issuance.maxMint || ''}`;
-                    gridItem.appendChild(maxMintElement);
-
-                    const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
-                    dispenserCache[issuance.asset] = dispenserData;
-
-                    const dispenserElement = document.createElement('p');
-                    let dispenserLink = '';
-                    let dispenserText = '';
-                    if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
-                        dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
-                        const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
-                        dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
-                    }
-
-                    dispenserElement.innerHTML = dispenserLink ? `<a href="${dispenserLink}">Dispenser: ${dispenserText}</a>` : '';
-                    gridItem.appendChild(dispenserElement);
-
-                    result.appendChild(gridItem);
+                const nameElement = document.createElement('p');
+                if (issuance.type === 'wrap') {
+                    nameElement.innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">w${name}</a>`;
+                } else {                
+                    nameElement.innerHTML = `<a href="${SITE_URL}asset/${issuance.asset}">${name}</a>`;
                 }
+                gridItem.appendChild(nameElement);
+
+                const typeElement = document.createElement('p');
+                typeElement.textContent = `Type: ${issuance.type}`;
+                gridItem.appendChild(typeElement);
+
+                const supplyElement = document.createElement('p');
+                if (issuance.type === 'wrap') {
+                    supplyElement.innerHTML = `<a href="${issuance.sourceLink}">Supply: ${issuance.supply}</a>`;
+                } else {
+                    supplyElement.textContent = `Supply: ${issuance.supply}`;
+                }
+                gridItem.appendChild(supplyElement);
+
+                const maxMintElement = document.createElement('p');
+                maxMintElement.textContent = `Max Mint: ${issuance.maxMint || ''}`;
+                gridItem.appendChild(maxMintElement);
+
+                const dispenserData = dispenserCache[issuance.asset] || await (await fetch(`${API_URL}dispensers/${issuance.asset}?open`)).json();
+                dispenserCache[issuance.asset] = dispenserData;
+
+                const dispenserElement = document.createElement('p');
+                let dispenserLink = '';
+                let dispenserText = '';
+                if (dispenserData?.data?.length > 0 && dispenserData.data[0].give_remaining > 0) {
+                    dispenserLink = `${SITE_URL}tx/${dispenserData.data[0].tx_hash}`;
+                    const { give_remaining: giveRemaining, satoshi_price: satoshiPrice } = dispenserData.data[0];
+                    dispenserText = `${giveRemaining} @ ${satoshiPrice}`; // Format the text as 'x @ y'
+                }
+
+                dispenserElement.innerHTML = dispenserLink ? `<a href="${dispenserLink}">Dispenser: ${dispenserText}</a>` : '';
+                gridItem.appendChild(dispenserElement);
+
+                grid.appendChild(gridItem);
             }
 
             loader.style.display = 'none';
@@ -210,7 +158,7 @@
                 document.getElementById('filterSelect').value = filterType;
             }
             loadIssuances();  // Load issuances when the page loads
-        }   
+        }
     </script>
 </body>
 </html>
