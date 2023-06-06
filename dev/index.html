@@ -8,7 +8,7 @@
         * {font-family: 'VT323', monospace;}
         body {width:60%; margin:0 auto; font-size: 1.5rem;}
         table {width:100%;}
-        img {width:75px; height:75px; image-rendering:pixelated; cursor: pointer;}
+        img {width:100%; height:auto; image-rendering:pixelated; cursor: pointer;}
         .header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem}
         td {text-align:center}
 
@@ -26,12 +26,11 @@
 
         .grid-item {
             width: 30%;
-            border: 1px solid black;
             margin-bottom: 2rem;
-            padding: 1rem;
             box-sizing: border-box;
+            text-align: center;
         }
-
+        .grid-item p {margin:0; padding:0}
     </style>
 </head>
 <body>
